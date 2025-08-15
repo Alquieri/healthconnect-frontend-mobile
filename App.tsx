@@ -1,10 +1,16 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, Image } from 'react-native'; // 1. Import Image
+
+const logo = require('./assets/image.png'); 
 
 export default function App() {
   return (
     <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
+      <Image source={logo} style={styles.logo} /> 
+      <Text style={{ fontWeight: 'bold', fontSize: 30 }}>CDC</Text>
+      <Text style={{ fontWeight: 'bold', fontSize: 30, marginTop: 10, textAlign: 'center' }}>
+        Clínica digital de{'\n'}Curitiba
+      </Text>
       <StatusBar style="auto" />
     </View>
   );
@@ -13,8 +19,14 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#a0c3ffff',
+    backgroundColor: '#FAF2EA',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  logo: {
+    width: 150,
+    height: 150,
+    marginBottom: 20, 
   },
 });
