@@ -1,12 +1,13 @@
 {
   "expo": {
-    "name": "healthconnect-frontend-mobile",
+    "name": "healthconnect",
     "slug": "healthconnect-frontend-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "plugins":["expo-router"],
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
