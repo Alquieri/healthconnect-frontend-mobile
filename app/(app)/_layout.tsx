@@ -2,9 +2,8 @@ import { Tabs } from 'expo-router';
 import { Button } from 'react-native';
 import { useAuth } from '../../src/context/AuthContext'; // Ajuste o caminho de importação
 
-// Exemplo de layout com abas para a área logada
 export default function AppLayout() {
-  const { signOut } = useAuth();
+  const { logout } = useAuth();
 
   return (
     <Tabs>
@@ -12,11 +11,9 @@ export default function AppLayout() {
         name="index"
         options={{
           title: 'Início',
-          headerRight: () => <Button title="Sair" onPress={signOut} />,
+          headerRight: () => <Button title="Sair" onPress={logout} />,
         }}
       />
-      {/* Você pode adicionar outras telas aqui, como a de perfil */}
-      {/* <Tabs.Screen name="profile" options={{ title: 'Perfil' }} /> */}
     </Tabs>
   );
 }
