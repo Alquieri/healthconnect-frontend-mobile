@@ -3,7 +3,6 @@ import { HeaderLogo } from '../../src/components/HeaderLogo';
 
 export default function AuthLayout() {
   return (
-    // O Stack agora "abraça" as configurações de tela
     <Stack
   
       screenOptions={{

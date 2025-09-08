@@ -2,6 +2,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 const InitialLayout = () => {
   const { token, loading } = useAuth();
@@ -48,6 +49,7 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <InitialLayout />
+      <Toast />
     </AuthProvider>
   );
 }
