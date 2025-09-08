@@ -1,30 +1,21 @@
-import { Tabs } from 'expo-router';
-import { Button } from 'react-native';
-import { useAuth } from '../../src/context/AuthContext';
-import { HeaderLogo } from '../../src/components/HeaderLogo'; // 👈 1. IMPORTE O COMPONENTE
+import { Tabs } from 'expo-router'; // Ou 'Stack' se você estiver usando Stack
 
 export default function AppLayout() {
-  const { signOut } = useAuth();
-
   return (
-    <Tabs
-      screenOptions={{
-        // Você pode definir opções padrão para todas as abas aqui
-        headerLeft: () => <Button title="Sair" onPress={signOut} />, // Movendo o botão Sair para a esquerda
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Início',
-          headerRight: () => <HeaderLogo />, 
-        }}
+    <Tabs> {/* Ou <Stack> */}
+      <Tabs.Screen 
+        name="index" 
+        options={{ 
+          // ... outras opções que você já tem ...
+          headerShown: false, // 👈 Adicione esta linha!
+          title: "Início" // O título ainda pode ser útil para a Tab Bar/Menu
+        }} 
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Perfil',
-          headerRight: () => <HeaderLogo />, 
+          // headerShown: false, se você quiser um header customizado aqui também
         }}
       />
     </Tabs>
