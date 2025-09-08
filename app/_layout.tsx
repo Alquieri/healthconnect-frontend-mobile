@@ -2,6 +2,8 @@ import 'expo-dev-client';
 import React, { useEffect } from 'react';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { SplashScreen, Stack } from 'expo-router';
+import { ActivityIndicator, View } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 
 SplashScreen.preventAutoHideAsync();
@@ -37,6 +39,8 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <MainLayout />
+      <InitialLayout />
+      <Toast />
     </AuthProvider>
   );
 }

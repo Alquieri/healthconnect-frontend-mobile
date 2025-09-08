@@ -2,9 +2,10 @@
   "expo": {
     "name": "healthconnect",
     "slug": "healthconnect-frontend-mobile",
+    "scheme": "healthconnect",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./src/assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "plugins": [
@@ -12,7 +13,7 @@
       "expo-secure-store"
     ],
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./src/assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
