@@ -1,131 +1,123 @@
-// app/(auth)/login.tsx
-
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet } from 'react-native';
-// import { useAuth } from '../../src/context/AuthContext'; // Se você for usar a lógica de login aqui
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { Link } from 'expo-router';
+import { useAuth } from '../../src/context/AuthContext';
+import { CustomInput } from '../../src/components/CustomInput';
+import { CustomButton } from '../../src/components/CustomButton';
+import { COLORS } from '../../src/constants/theme'; // 👈 Importe o tema
 
 export default function LoginScreen() {
-  // const { signIn } = useAuth(); // Se for fazer o login real aqui
+  const { signIn } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   return (
-    <View style={styles.container}>
-      {/* <Image source={require('../../../assets/logo.png')} style={styles.logo} /> */} {/* Se tiver logo */}
-      <Text style={styles.title}>Entrar</Text>
-      <Text style={styles.subtitle}>Bem-vindo de volta!</Text>
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <Text style={styles.title}>Entrar</Text>
+        <Text style={styles.subtitle}>Bem-vindo de volta!</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Informe seu e-mail"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        placeholderTextColor="#889" // Cor para o placeholder
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Senha"
-        secureTextEntry
-        placeholderTextColor="#889" // Cor para o placeholder
-      />
+        <CustomInput
+          placeholder="Informe seu e-mail"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          value={email}
+          onChangeText={setEmail}
+        />
+        <CustomInput
+          placeholder="Senha"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
 
-      <TouchableOpacity>
-        <Text style={styles.forgotPassword}>Esqueci minha senha</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.forgotPasswordContainer}>
+          <Text style={styles.forgotPasswordText}>Esqueci minha senha</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.loginButton} onPress={() => console.log('Login pressed')}>
-        <Text style={styles.loginButtonText}>Entrar</Text>
-      </TouchableOpacity>
+        <CustomButton title="Entrar" onPress={signIn} />
 
-      <Text style={styles.orText}>Continuar com Google</Text>
+        <Text style={styles.orText}>Continuar com</Text>
 
-      <TouchableOpacity style={styles.googleButton}>
-        {/* <Image source={require('../../../assets/google-icon.png')} style={styles.googleIcon} /> */}
-        <Text style={styles.googleButtonText}>Google</Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity style={styles.googleButton}>
+          <Text style={styles.googleButtonText}>Google</Text>
+        </TouchableOpacity>
+        
+        <View style={styles.registerRedirect}>
+          <Text style={styles.registerRedirectText}>Não tem uma conta? </Text>
+          <Link href="/register" asChild>
+            <TouchableOpacity>
+              <Text style={styles.registerLink}>Cadastre-se</Text>
+            </TouchableOpacity>
+          </Link>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#E8F2F8', // Azul claro acinzentado para o fundo
-    alignItems: 'center',
-    paddingTop: 80,
-    // ... outros estilos que você tiver
+    backgroundColor: COLORS.background, 
   },
-  // Se tiver um logo, ajuste aqui
-  logo: {
-    width: 100,
-    height: 100,
-    resizeMode: 'contain',
-    marginBottom: 30,
+  scrollContainer: {
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#2C3E50', // Azul marinho escuro para o título
+    color: COLORS.text,
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 16,
-    color: '#5B7C99', // Azul médio para o subtítulo
+    color: COLORS.textSecondary,
     marginBottom: 40,
   },
-  input: {
-    width: '80%',
-    backgroundColor: '#FFFFFF', // Manter branco
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: '#A8D0E6', // Azul claro para a borda do input
-    fontSize: 16,
-    color: '#334D66', // Cor do texto digitado
-  },
-  forgotPassword: {
-    color: '#007BFF', // Azul vibrante para "Esqueci minha senha"
-    marginTop: 5,
+  forgotPasswordContainer: {
+    width: '85%',
     marginBottom: 20,
+  },
+  forgotPasswordText: {
+    color: COLORS.error, 
     fontSize: 14,
   },
-  loginButton: {
-    width: '80%',
-    backgroundColor: '#007BFF', // Azul vibrante para o botão principal
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  loginButtonText: {
-    color: '#FFFFFF', // Texto branco
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
   orText: {
-    color: '#5B7C99', // Azul médio para "Continuar com Google"
+    color: COLORS.textSecondary, 
     marginTop: 30,
     marginBottom: 15,
   },
   googleButton: {
-    width: '80%',
+    width: '85%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF', // Manter branco
+    backgroundColor: COLORS.white,
     padding: 15,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#A8D0E6', // Azul claro para a borda do botão Google
+    borderColor: COLORS.border, 
   },
   googleButtonText: {
-    color: '#334D66', // Azul escuro para o texto do Google
+    color: COLORS.text, 
     fontSize: 16,
-    marginLeft: 10,
+    fontWeight: '600',
   },
-  // Se tiver ícone do Google
-  googleIcon: {
-    width: 20,
-    height: 20,
-    resizeMode: 'contain',
-  }
+  registerRedirect: {
+    flexDirection: 'row',
+    marginTop: 40,
+  },
+  registerRedirectText: {
+    fontSize: 14,
+    color: COLORS.textSecondary, // 👈 Use a cor do tema
+  },
+  registerLink: {
+    fontSize: 14,
+    color: COLORS.primary, // 👈 Use a cor do tema
+    fontWeight: 'bold',
+  },
 });
