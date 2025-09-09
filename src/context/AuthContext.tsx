@@ -53,6 +53,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
     const logout = async () => {
+      console.log('[AuthProvider] logout: Iniciando logout...');
       await apiLogout();
       setToken(null);
       setStatus('unauthenticated');

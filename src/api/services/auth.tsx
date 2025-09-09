@@ -23,7 +23,3 @@ export async function logout(): Promise<void> {
     await deleteToken();
     delete apiPrivate.defaults.headers.common['Authorization'];
 }
-
-
-
-
