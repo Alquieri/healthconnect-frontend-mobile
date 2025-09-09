@@ -4,7 +4,7 @@ import { Image, StyleSheet } from 'react-native';
 export function HeaderLogo() {
   return (
     <Image
-      source={require('../assets/logo_1.png')}
+      source={require('../../assets/logo_1.png')}
       style={styles.logo}
     />
   );
