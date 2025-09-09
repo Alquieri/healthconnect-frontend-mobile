@@ -9,7 +9,7 @@ export default function AuthLayout() {
         headerShown: true,
         headerTransparent: true,
         headerTitle: '',
-        headerRight: () => <HeaderLogo />, // O logo aparece por padrão
+        headerRight: () => <HeaderLogo />,
       }}
     >
       <Stack.Screen
