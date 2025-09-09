@@ -49,7 +49,7 @@ export default function LoginScreen() {
                     <Text style={styles.forgotPasswordText}>Esqueci minha senha</Text>
                 </TouchableOpacity>
                 
-                <CustomButton title={loading ? 'Entrando...' : 'Entrar'} onPress={handleLogin} loading={loading} />
+                <CustomButton title={loading ? 'Entrando...' : 'Entrar'} onPress={handleLogin} disabled={loading} />
 
                 <Text style={styles.orText}>Continuar com</Text>
 
