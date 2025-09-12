@@ -24,3 +24,18 @@ export enum DoctorPath {
     GET_DOCTOR_BY_USER_ID = "/api/v1/doctor/user",
     GET_DOCTOR_DETAIL_BY_ID = "/api/v1/doctor/detail",
 }
+
+export enum AvailabilityPath {
+    CREATE_AVAILABILITY = "/api/v1/availability",
+    GET_AVAILABILITY_BY_ID = "/api/v1/availability",
+    GET_ALL_BY_DOCTOR_ID = "/api/v1/availability/by-doctor",
+    DELETE_AVAILABILITY = "/api/v1/availability",
+}
+
+export enum AppointmentPath {
+    CREATE_APPOINTMENT = "/api/v1/appointment",
+    GET_APPOINTMENT_BY_ID = "/api/v1/appointment",
+    GET_APPOINTMENTS_BY_DOCTOR_ID = "/api/v1/appointment/by-doctor",
+    GET_APPOINTMENTS_BY_PATIENT_ID = "/api/v1/appointment/by-client",
+    UPDATE_APPOINTMENT = "/api/v1/appointment",
+}
