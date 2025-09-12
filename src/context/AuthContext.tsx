@@ -45,6 +45,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const login = async (loginData: AuthDto.LoginRequest) => {
       try {
         const response = await apiLogin(loginData);
+        await saveToken(response.token);
         setToken(response.token);
         setStatus('authenticated');
       } catch (error: any) {

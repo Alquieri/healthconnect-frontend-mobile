@@ -1,4 +1,4 @@
-// app/_layout.tsx - A Versão Correta e Definitiva
+// // app/_layout.tsx - A Versão Correta e Definitiva
 
 import 'expo-dev-client';
 import React, { useEffect } from 'react';
@@ -23,7 +23,7 @@ function MainLayout() {
   }
 
   return (
-    <Stack key={status} screenOptions={{ headerShown: false }}>
+    <Stack screenOptions={{ headerShown: false }}>
       {status === 'authenticated' ? (
         <Stack.Screen name="(app)" />
       ) : (
@@ -41,3 +41,5 @@ export default function RootLayout() {
     </AuthProvider>
   );
 }
+
+
