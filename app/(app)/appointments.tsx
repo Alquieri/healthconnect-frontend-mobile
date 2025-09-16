@@ -140,7 +140,7 @@ export default function SelectTimeScreen() {
   const loadDoctorAndSchedule = async () => {
     try {
       setLoading(true);
-      const doctorId = "931ffe9f-88a8-4f60-bf9a-9611442d41d9"
+      const doctorId = "33194ad4-f83e-4e87-9a7c-5adeeab758e1"
       // const doctorId = params.doctorId as string;
       if (!doctorId) {
         throw new Error('ID do médico não fornecido');
