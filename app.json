@@ -5,7 +5,7 @@
     "scheme": "healthconnect",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./src/assets/icon.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "plugins": [
@@ -13,12 +13,13 @@
       "expo-secure-store"
     ],
     "splash": {
-      "image": "./src/assets/splash-icon.png",
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "userInterfaceStyle": "light"
     },
     "android": {
       "adaptiveIcon": {
@@ -26,6 +27,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
+      "navigationBarColor": "transparent",
       "package": "com.anonymous.healthconnectfrontendmobile"
     },
     "web": {
