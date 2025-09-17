@@ -2,11 +2,11 @@ import { apiPrivate } from "../api";
 import { AppointmentPath } from "../enums/routes";
 import { AppointmentDto } from "../models/appointment";
 
-export async function createAppointment(appointment: AppointmentDto.AppointmentCreation): Promise<AppointmentDto.AppointmentDetails> {
+export async function createAppointment(appointmentData: AppointmentDto.AppointmentCreation): Promise<AppointmentDto.AppointmentDetails> {
   try {
     const response = await apiPrivate.post<AppointmentDto.AppointmentDetails>(
-      `${AppointmentPath.CREATE_APPOINTMENT}`, 
-      appointment
+      AppointmentPath.CREATE_APPOINTMENT,
+      appointmentData
     );
     return response.data;
   } catch (error) {
@@ -27,7 +27,7 @@ export async function getAppointmentById(appointmentId: string): Promise<Appoint
   }
 }
 
-export async function getAllDoctorAppointments(doctorId: string): Promise<AppointmentDto.AppointmentDetails[]> {
+export async function getAppointmentsByDoctorId(doctorId: string): Promise<AppointmentDto.AppointmentDetails[]> {
   try {
     const response = await apiPrivate.get<AppointmentDto.AppointmentDetails[]>(
       `${AppointmentPath.GET_APPOINTMENTS_BY_DOCTOR_ID}/${doctorId}`
@@ -39,7 +39,7 @@ export async function getAllDoctorAppointments(doctorId: string): Promise<Appoin
   }
 }
 
-export async function getAllPatientAppointments(patientId: string): Promise<AppointmentDto.AppointmentDetails[]> {
+export async function getAppointmentsByPatientId(patientId: string): Promise<AppointmentDto.AppointmentDetails[]> {
   try {
     const response = await apiPrivate.get<AppointmentDto.AppointmentDetails[]>(
       `${AppointmentPath.GET_APPOINTMENTS_BY_PATIENT_ID}/${patientId}`
@@ -47,6 +47,19 @@ export async function getAllPatientAppointments(patientId: string): Promise<Appo
     return response.data;
   } catch (error) {
     console.error('Erro ao obter agendamentos do paciente:', error);
+    throw error;
+  }
+}
+
+export async function updateAppointment(appointmentId: string, appointmentData: Partial<AppointmentDto.AppointmentCreation>): Promise<AppointmentDto.AppointmentDetails> {
+  try {
+    const response = await apiPrivate.put<AppointmentDto.AppointmentDetails>(
+      `${AppointmentPath.UPDATE_APPOINTMENT}/${appointmentId}`,
+      appointmentData
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao atualizar agendamento:', error);
     throw error;
   }
 }
