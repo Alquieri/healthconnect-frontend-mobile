@@ -1,9 +1,9 @@
-// // app/_layout.tsx - A Versão Correta e Definitiva
-
 import 'expo-dev-client';
 import React, { useEffect } from 'react';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { SplashScreen, Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { Platform } from 'react-native';
 import Toast from 'react-native-toast-message';
 
 SplashScreen.preventAutoHideAsync();
@@ -23,13 +23,21 @@ function MainLayout() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      {status === 'authenticated' ? (
-        <Stack.Screen name="(app)" />
-      ) : (
-        <Stack.Screen name="(auth)" />
-      )}
-    </Stack>
+    <>
+      <StatusBar 
+        style="dark" 
+        backgroundColor="transparent"
+        translucent={Platform.OS === 'android'}
+      />
+      
+      <Stack screenOptions={{ headerShown: false }}>
+        {status === 'authenticated' ? (
+          <Stack.Screen name="(app)" />
+        ) : (
+          <Stack.Screen name="(auth)" />
+        )}
+      </Stack>
+    </>
   );
 }
 
@@ -41,5 +49,3 @@ export default function RootLayout() {
     </AuthProvider>
   );
 }
-
-
