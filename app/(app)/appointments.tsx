@@ -46,7 +46,7 @@ interface DaySchedule {
   eveningSlots: TimeSlot[];
 }
 
-export default function SelectTimeScreen() {
+export default function AppointmentsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   
@@ -56,12 +56,6 @@ export default function SelectTimeScreen() {
   const [doctor, setDoctor] = useState<Doctor | null>(null);
   const [schedule, setSchedule] = useState<DaySchedule[]>([]);
   const [bookingAppointment, setBookingAppointment] = useState(false);
-  const [currentWeekStart, setCurrentWeekStart] = useState(() => {
-    const today = new Date();
-    const day = today.getDay();
-    const diff = today.getDate() - day;
-    return new Date(today.setDate(diff));
-  });
 
   const processAvailabilityData = (availabilities: AvailabilityDto.AvailabilitySummary[]): DaySchedule[] => {
     const today = new Date();
@@ -140,11 +134,19 @@ export default function SelectTimeScreen() {
   const loadDoctorAndSchedule = async () => {
     try {
       setLoading(true);
-      const doctorId = "33194ad4-f83e-4e87-9a7c-5adeeab758e1"
-      // const doctorId = params.doctorId as string;
+      
+      const doctorId = params.doctorId as string;
       if (!doctorId) {
-        throw new Error('ID do médico não fornecido');
+        Toast.show({
+          type: 'error',
+          text1: 'Acesso negado',
+          text2: 'Você deve selecionar um médico primeiro'
+        });
+        router.replace('/searchDoctor');
+        return;
       }
+
+      console.log('[Appointments] Carregando horários para o médico:', doctorId);
 
       const availabilities = await getAllAvailabilityByDoctorId(doctorId); 
       console.log("RESPOSTA BRUTA DA API:", JSON.stringify(availabilities, null, 2));
@@ -165,7 +167,7 @@ export default function SelectTimeScreen() {
         name: firstAvailability.name,
         specialty: firstAvailability.specialty,
         rqe: firstAvailability.rqe,
-        image: 'https://via.placeholder.com/80x80' // future
+        image: 'https://via.placeholder.com/80x80'
       };
 
       setDoctor(doctorInfo);
@@ -218,19 +220,24 @@ export default function SelectTimeScreen() {
         notes: ''
       };
 
+      console.log('[Appointments] Criando agendamento:', appointmentData);
+
       const createdAppointment = await createAppointment(appointmentData);
+
+      console.log('[Appointments] Agendamento criado:', createdAppointment);
 
       Toast.show({
         type: 'success',
         text1: 'Agendamento confirmado!',
-        text2: `Consulta marcada para ${selectedDate} às ${selectedTimeSlot.time}`
+        text2: `Consulta marcada para ${getCurrentDaySchedule()?.displayDate} às ${selectedTimeSlot.time}`
       });
 
       setTimeout(() => {
-        router.back();
-      }, 1500);
+        router.replace('/searchDoctor');
+      }, 2000);
 
     } catch (error: any) {
+      console.error('Erro ao criar agendamento:', error);
       Toast.show({
         type: 'error',
         text1: 'Erro no agendamento',
@@ -255,6 +262,7 @@ export default function SelectTimeScreen() {
       ]}
       onPress={() => slot.available && setSelectedTimeSlot(slot)}
       disabled={!slot.available}
+      activeOpacity={0.7}
     >
       <Text style={[
         styles.timeSlotText,
@@ -278,7 +286,7 @@ export default function SelectTimeScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>Carregando horários...</Text>
+          <Text style={styles.loadingText}>Carregando horários disponíveis...</Text>
         </View>
       </SafeAreaView>
     );
@@ -288,15 +296,17 @@ export default function SelectTimeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Selecionar Horário</Text>
+        <Text style={styles.headerTitle}>Agendar Consulta</Text>
         <View style={styles.headerRight} />
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Informações do Médico */}
         {doctor && (
           <View style={styles.doctorCard}>
             <View style={styles.doctorInfo}>
@@ -306,16 +316,21 @@ export default function SelectTimeScreen() {
                 defaultSource={require('../../assets/icon.png')}
               />
               <View style={styles.doctorDetails}>
-                <Text style={styles.doctorName}>{doctor.name}</Text>
+                <Text style={styles.doctorName}>Dr. {doctor.name}</Text>
                 <Text style={styles.doctorSpecialty}>{doctor.specialty}</Text>
                 <Text style={styles.doctorRqe}>RQE: {doctor.rqe}</Text>
+                <View style={styles.doctorRating}>
+                  <Ionicons name="star" size={16} color="#FFD700" />
+                  <Text style={styles.ratingText}>4.8 (120+ avaliações)</Text>
+                </View>
               </View>
             </View>
           </View>
         )}
 
+        {/* Seleção de Data */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Selecione a Data</Text>
+          <Text style={styles.sectionTitle}>📅 Selecione a Data</Text>
           
           {schedule.length > 0 && (
             <View style={styles.monthDisplay}>
@@ -334,6 +349,7 @@ export default function SelectTimeScreen() {
                 ]}
                 onPress={() => day.available && setSelectedDate(day.date)}
                 disabled={!day.available}
+                activeOpacity={0.8}
               >
                 <Text style={[
                   styles.dayNameText,
@@ -366,12 +382,16 @@ export default function SelectTimeScreen() {
                   {day.month}
                 </Text>
 
-                <View style={styles.availableDot} />
+                <View style={[
+                  styles.availableDot,
+                  !day.available && styles.availableDotDisabled
+                ]} />
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
 
+        {/* Data Selecionada */}
         {currentSchedule && (
           <View style={styles.selectedDateContainer}>
             <Ionicons name="calendar" size={20} color={COLORS.primary} />
@@ -381,12 +401,14 @@ export default function SelectTimeScreen() {
           </View>
         )}
 
+        {/* Horários Disponíveis */}
         {currentSchedule && currentSchedule.available && (
           <>
             {currentSchedule.afternoonSlots.length > 0 && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>
-                  <Ionicons name="sunny-outline" size={16} color={COLORS.primary} /> Tarde • {currentSchedule.afternoonSlots.length} horários
+                  <Ionicons name="sunny-outline" size={16} color={COLORS.primary} /> 
+                  {' '}Tarde • {currentSchedule.afternoonSlots.length} horários
                 </Text>
                 <View style={styles.timeSlotsGrid}>
                   {currentSchedule.afternoonSlots.map(renderTimeSlot)}
@@ -397,7 +419,8 @@ export default function SelectTimeScreen() {
             {currentSchedule.eveningSlots.length > 0 && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>
-                  <Ionicons name="moon-outline" size={16} color={COLORS.primary} /> Noite • {currentSchedule.eveningSlots.length} horários
+                  <Ionicons name="moon-outline" size={16} color={COLORS.primary} />
+                  {' '}Noite • {currentSchedule.eveningSlots.length} horários
                 </Text>
                 <View style={styles.timeSlotsGrid}>
                   {currentSchedule.eveningSlots.map(renderTimeSlot)}
@@ -407,22 +430,53 @@ export default function SelectTimeScreen() {
           </>
         )}
 
+        {/* Estado Vazio */}
         {schedule.length === 0 && (
           <View style={styles.noSlotsContainer}>
             <Ionicons name="calendar-outline" size={48} color={COLORS.placeholder} />
             <Text style={styles.noSlotsTitle}>Nenhum horário disponível</Text>
             <Text style={styles.noSlotsText}>
               Este médico não possui horários disponíveis no momento.
-              Tente novamente mais tarde.
+              Tente novamente mais tarde ou escolha outro profissional.
             </Text>
+            <TouchableOpacity 
+              style={styles.backToSearchButton}
+              onPress={() => router.replace('/searchDoctor')}
+            >
+              <Text style={styles.backToSearchText}>Voltar à Busca</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Informações do Agendamento Selecionado */}
+        {selectedTimeSlot && currentSchedule && (
+          <View style={styles.appointmentSummary}>
+            <Text style={styles.summaryTitle}>📋 Resumo do Agendamento</Text>
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryLabel}>Médico:</Text>
+              <Text style={styles.summaryValue}>Dr. {doctor?.name}</Text>
+            </View>
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryLabel}>Data:</Text>
+              <Text style={styles.summaryValue}>{currentSchedule.displayDate}</Text>
+            </View>
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryLabel}>Horário:</Text>
+              <Text style={styles.summaryValue}>{selectedTimeSlot.time}</Text>
+            </View>
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryLabel}>Duração:</Text>
+              <Text style={styles.summaryValue}>{selectedTimeSlot.durationMinutes} minutos</Text>
+            </View>
           </View>
         )}
       </ScrollView>
 
+      {/* Footer com Botão de Confirmação */}
       {currentSchedule?.available && (
         <View style={styles.footer}>
           <CustomButton
-            title={bookingAppointment ? 'Agendando...' : 'Confirmar Agendamento'}
+            title={bookingAppointment ? 'Confirmando Agendamento...' : 'Confirmar Agendamento'}
             onPress={handleBookAppointment}
             disabled={!selectedTimeSlot || bookingAppointment}
           />
@@ -441,11 +495,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
     color: COLORS.textSecondary,
+    textAlign: 'center',
   },
   header: {
     flexDirection: 'row',
@@ -455,6 +511,11 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   backButton: {
     padding: 4,
@@ -477,10 +538,8 @@ const styles = StyleSheet.create({
   doctorCard: {
     backgroundColor: COLORS.white,
     borderRadius: 16,
-    padding: 16,
+    padding: 20,
     marginVertical: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -488,44 +547,54 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   doctorInfo: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
   },
   doctorImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     marginRight: 16,
   },
   doctorDetails: {
     flex: 1,
   },
   doctorName: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '600',
     color: COLORS.text,
     marginBottom: 4,
   },
   doctorSpecialty: {
-    fontSize: 14,
+    fontSize: 16,
     color: COLORS.primary,
     fontWeight: '500',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   doctorRqe: {
-    fontSize: 12,
+    fontSize: 14,
     color: COLORS.textSecondary,
-    marginBottom: 6,
+    marginBottom: 8,
+  },
+  doctorRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ratingText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginLeft: 4,
   },
   section: {
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: COLORS.text,
     marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   monthDisplay: {
     backgroundColor: COLORS.white,
@@ -533,6 +602,11 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
     alignItems: 'center',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   monthYearText: {
     fontSize: 18,
@@ -553,14 +627,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: COLORS.border,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   modernDateOptionDisabled: {
     backgroundColor: '#F8F8F8',
     borderColor: '#E8E8E8',
+    elevation: 0,
   },
   modernDateOptionSelected: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
+    elevation: 4,
   },
   dayNameText: {
     fontSize: 12,
@@ -611,6 +692,9 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: '#4CAF50',
   },
+  availableDotDisabled: {
+    backgroundColor: COLORS.placeholder,
+  },
   selectedDateContainer: {
     backgroundColor: COLORS.white,
     borderRadius: 12,
@@ -619,6 +703,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   selectedDateText: {
     fontSize: 16,
@@ -635,24 +724,31 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 12,
     margin: 6,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: COLORS.border,
-    minWidth: 80,
+    minWidth: 90,
     alignItems: 'center',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   timeSlotDisabled: {
     backgroundColor: '#F5F5F5',
     borderColor: '#E0E0E0',
+    elevation: 0,
   },
   timeSlotSelected: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
+    elevation: 3,
   },
   timeSlotText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
     color: COLORS.text,
   },
   timeSlotDuration: {
@@ -667,23 +763,70 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontWeight: '600',
   },
+  appointmentSummary: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  summaryTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: 16,
+  },
+  summaryItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  summaryLabel: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+  },
+  summaryValue: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLORS.text,
+  },
   noSlotsContainer: {
     alignItems: 'center',
-    paddingVertical: 40,
+    paddingVertical: 60,
+    paddingHorizontal: 20,
   },
   noSlotsTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '600',
     color: COLORS.text,
     marginTop: 16,
     marginBottom: 8,
+    textAlign: 'center',
   },
   noSlotsText: {
     fontSize: 14,
     color: COLORS.textSecondary,
     textAlign: 'center',
-    lineHeight: 20,
-    paddingHorizontal: 32,
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  backToSearchButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+  },
+  backToSearchText: {
+    color: COLORS.white,
+    fontSize: 14,
+    fontWeight: '600',
   },
   footer: {
     padding: 20,
@@ -691,5 +834,10 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
     alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
 });
