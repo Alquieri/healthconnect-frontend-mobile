@@ -22,7 +22,9 @@ export enum DoctorPath {
     GET_DOCTOR_BY_ID = "/api/v1/doctor",
     GET_ALL_DOCTORS = "/api/v1/doctor/all",
     GET_DOCTOR_BY_USER_ID = "/api/v1/doctor/user",
+    GET_DOCTOR_BY_RQE = "/api/v1/doctor/by-rqe",
     GET_DOCTOR_DETAIL_BY_ID = "/api/v1/doctor/detail",
+    GET_DOCTORS_BY_SPECIALITY = "/api/v1/doctor/by-Speciality/all",
 }
 
 export enum AvailabilityPath {
@@ -38,4 +40,12 @@ export enum AppointmentPath {
     GET_APPOINTMENTS_BY_DOCTOR_ID = "/api/v1/appointment/by-doctor",
     GET_APPOINTMENTS_BY_PATIENT_ID = "/api/v1/appointment/by-client",
     UPDATE_APPOINTMENT = "/api/v1/appointment",
+}
+
+export enum SpecialityPath {
+    GET_ALL_SPECIALITIES = "/api/v1/speciality/all",
+    GET_SPECIALITY_BY_ID = "/api/v1/speciality",
+    GET_POPULAR_SPECIALITIES = "/api/v1/speciality/popular",
+    CREATE_SPECIALITY = "/api/v1/speciality", // Para futuro uso admin
+    UPDATE_SPECIALITY = "/api/v1/speciality", // Para futuro uso admin
 }
