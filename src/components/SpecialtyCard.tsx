@@ -18,7 +18,9 @@ export function SpecialtyCard({ item }: SpecialtyCardProps) {
   const handlePress = () => {
     router.push({
       pathname: '/searchDoctor',
-      params: { specialty: item.name }
+      params: { specialty: item.name,
+                specialtyId: item.id
+       }
     });
   };
 
