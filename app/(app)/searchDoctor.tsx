@@ -18,6 +18,7 @@ import { getAllSpecialities } from '../../src/api/services/speciality';
 import { DoctorDto } from '../../src/api/models/doctor';
 import { SpecialityDto } from '../../src/api/models/speciality';
 import { COLORS } from '../../src/constants/theme';
+import { useAuth } from '../../src/context/AuthContext';
 
 interface Doctor {
   id: string;
@@ -40,7 +41,6 @@ interface Specialty {
   icon: string;
 }
 
-// Cores e ícones padrão como fallback
 const defaultSpecialtyStyles: Record<string, { color: string; icon: string }> = {
   'Cardiologia': { color: '#FF6B6B', icon: 'heart' },
   'Dermatologia': { color: '#4ECDC4', icon: 'medical' },
@@ -56,6 +56,7 @@ const defaultSpecialtyStyles: Record<string, { color: string; icon: string }> = 
 export default function SearchDoctorScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { refreshAuth, forceLogout } = useAuth();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -66,23 +67,25 @@ export default function SearchDoctorScreen() {
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>('');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
-  // Carregar especialidades e médicos ao inicializar
   useEffect(() => {
-    loadSpecialties();
-    
-    const specialtyFromParams = params.specialty as string;
-    if (specialtyFromParams) {
-      setSelectedSpecialty(specialtyFromParams);
-      loadDoctorsBySpecialty(specialtyFromParams);
-    } else {
-      loadAllDoctors();
-    }
-  }, [params.specialty]);
+  loadSpecialties();
+  
+  const specialtyFromParams = params.specialty as string;
+  const specialtyIdFromParams = params.specialtyId as string;
+  
+  if (specialtyFromParams) {
+    setSelectedSpecialty(specialtyFromParams);
+    loadDoctorsBySpecialty(specialtyFromParams, specialtyIdFromParams);
+  } else {
+    loadAllDoctors();
+  }
+}, [params.specialty, params.specialtyId]); 
 
   useEffect(() => {
     filterDoctors();
   }, [searchQuery, doctors]);
 
+  
   const loadSpecialties = async () => {
     try {
       setSpecialtiesLoading(true);
@@ -146,10 +149,13 @@ export default function SearchDoctorScreen() {
     }
   };
 
-  const loadDoctorsBySpecialty = async (specialtyName: string) => {
+  const loadDoctorsBySpecialty = async (specialtyName: string, specialtyId: string) => {
+    console.log('[SearchDoctor] 🔍 Carregando médicos para:', specialtyName, 'ID:', specialtyId);
+    
     try {
       setLoading(true);
-      const response = await getAllDoctorsBySpeciality(specialtyName);
+      
+      const response = await getAllDoctorsBySpeciality(specialtyId);
       
       const mappedDoctors: Doctor[] = response.map((doctor: any) => ({
         id: doctor.id,
@@ -166,9 +172,50 @@ export default function SearchDoctorScreen() {
       }));
 
       setDoctors(mappedDoctors);
-    } catch (error) {
-      console.error('Erro ao carregar médicos por especialidade:', error);
-      Alert.alert('Erro', 'Não foi possível carregar médicos desta especialidade');
+      console.log('[SearchDoctor] ✅ Médicos carregados:', mappedDoctors.length);
+      
+    } catch (error: any) {
+      console.error('[SearchDoctor] ❌ Erro inicial:', error.response?.status);
+      
+      if (error.response?.status === 401) {
+        try {
+          console.log('[SearchDoctor] 🔄 Tentando refresh do token...');
+          await refreshAuth();
+          
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          const response = await getAllDoctorsBySpeciality(specialtyId);
+          
+          const mappedDoctors: Doctor[] = response.map((doctor: any) => ({
+            id: doctor.id,
+            name: doctor.name || 'Nome não informado',
+            specialty: doctor.specialty || specialtyName,
+            rqe: doctor.rqe || 'RQE não informado',
+            yearsExperience: Math.floor(Math.random() * 15) + 5,
+            rating: parseFloat((Math.random() * 2 + 3).toFixed(1)),
+            patientStories: Math.floor(Math.random() * 100) + 20,
+            location: 'Água Verde, Curitiba, Brazil',
+            image: 'https://via.placeholder.com/80x80',
+            isOnline: Math.random() > 0.5,
+            isFavorite: false,
+          }));
+
+          setDoctors(mappedDoctors);
+          console.log('[SearchDoctor] ✅ Médicos carregados após retry:', mappedDoctors.length);
+          
+        } catch (retryError) {
+          console.error('[SearchDoctor] ❌ Erro após retry, forçando logout...');
+          await forceLogout();
+          Alert.alert(
+            'Sessão Expirada', 
+            'Sua sessão expirou. Você será redirecionado para o login.',
+            [{ text: 'OK' }]
+          );
+        }
+      } else {
+        console.error('[SearchDoctor] ❌ Erro não relacionado à auth:', error);
+        Alert.alert('Erro', 'Não foi possível carregar médicos desta especialidade');
+      }
     } finally {
       setLoading(false);
     }
@@ -188,12 +235,21 @@ export default function SearchDoctorScreen() {
   };
 
   const handleSpecialtyPress = (specialty: Specialty) => {
+    if (loading) {
+      console.log('[SearchDoctor] ⏳ Ainda carregando, ignorando clique...');
+      return;
+    }
+    
+    console.log('[SearchDoctor] 👆 Especialidade selecionada:', specialty.name);
+    
     if (selectedSpecialty === specialty.name) {
+      console.log('[SearchDoctor] 🔄 Desmarcando especialidade');
       setSelectedSpecialty('');
       loadAllDoctors();
     } else {
+      console.log('[SearchDoctor] ✅ Selecionando nova especialidade');
       setSelectedSpecialty(specialty.name);
-      loadDoctorsBySpecialty(specialty.name);
+      loadDoctorsBySpecialty(specialty.name, specialty.id);
     }
     setSearchQuery(''); 
   };
