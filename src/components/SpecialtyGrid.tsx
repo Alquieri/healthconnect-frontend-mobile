@@ -10,7 +10,7 @@ const PAGE_WIDTH = width;
 
 const iconMapping: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = {
   'Cardiologista': 'heart-outline',
-  'Psicólogo': 'brain',
+  'Psicólogo': 'head-outline',
   'Psiquiatra': 'head-question-outline',
   'Dermatologista': 'content-cut',
   'Neurologista': 'head-cog-outline',
@@ -65,13 +65,13 @@ export function SpecialtyGrid() {
         setError('Não foi possível carregar as especialidades');
         
         const fallbackSpecialties: SpecialtyItem[] = [
-          { id: '1', name: 'Cardiologista', icon: 'heart-outline' },
-          { id: '2', name: 'Psicólogo', icon: 'brain' },
-          { id: '3', name: 'Dermatologista', icon: 'content-cut' },
-          { id: '4', name: 'Neurologista', icon: 'head-cog-outline' },
-          { id: '5', name: 'Clínico Geral', icon: 'doctor' },
-          { id: '6', name: 'Pediatra', icon: 'baby-face-outline' },
-        ];
+  { id: '1', name: 'Cardiologista', icon: 'heart-outline' },
+  { id: '2', name: 'Psicólogo', icon: 'head-outline' }, 
+  { id: '3', name: 'Dermatologista', icon: 'content-cut' },
+  { id: '4', name: 'Neurologista', icon: 'head-cog-outline' },
+  { id: '5', name: 'Clínico Geral', icon: 'doctor' },
+  { id: '6', name: 'Pediatra', icon: 'baby-face-outline' },
+];
         setSpecialties(fallbackSpecialties);
       } finally {
         setLoading(false);
