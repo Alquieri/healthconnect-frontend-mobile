@@ -1,52 +1,43 @@
-import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import React from 'react';
+import { View, StyleSheet, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../constants/theme';
+import { COLORS, SIZES } from '../constants/theme';
 
-export function SearchBar() {
-  const [query, setQuery] = useState('');
+// O componente agora recebe propriedades para se tornar um "componente controlado"
+interface SearchBarProps {
+  value: string;
+  onChangeText: (text: string) => void;
+  onSubmit: () => void;
+}
 
-  const handleClear = () => {
-    setQuery('');
-  };
-
+export function SearchBar({ value, onChangeText, onSubmit }: SearchBarProps) {
   return (
     <View style={styles.container}>
       <Ionicons name="search" size={20} color={COLORS.textSecondary} style={styles.icon} />
       <TextInput
         style={styles.input}
-        placeholder="Pesquisar"
+        placeholder="Pesquisar especialistas..."
         placeholderTextColor={COLORS.textSecondary}
-        value={query}
-        onChangeText={setQuery}
+        value={value}
+        onChangeText={onChangeText}
+        onSubmitEditing={onSubmit} // Esta função é chamada ao pressionar "Enter"
+        returnKeyType="search"
       />
-      {/* O botão de limpar só aparece se houver texto */}
-      {query.length > 0 && (
-        <TouchableOpacity onPress={handleClear}>
-          <Ionicons name="close-circle" size={20} color={COLORS.textSecondary} style={styles.icon} />
-        </TouchableOpacity>
-      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: COLORS.white,
+    borderRadius: SIZES.radius,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    height: 55,
-    // Sombra para dar a impressão de flutuação
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+    paddingHorizontal: 16,
+    height: 50,
   },
   icon: {
-    marginRight: 10,
+    marginRight: 12,
   },
   input: {
     flex: 1,
@@ -54,3 +45,4 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
 });
+
