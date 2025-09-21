@@ -8,7 +8,6 @@ interface CustomButtonProps extends TouchableOpacityProps {
 
 export function CustomButton({ title, disabled, ...props }: CustomButtonProps) {
   return (
-    // Adicionamos um estilo condicional: se 'disabled' for true, aplica o estilo 'disabledButton'
     <TouchableOpacity style={[styles.button, disabled && styles.disabledButton]} disabled={disabled} {...props}>
       <Text style={styles.buttonText}>{title}</Text>
     </TouchableOpacity>
@@ -18,7 +17,7 @@ export function CustomButton({ title, disabled, ...props }: CustomButtonProps) {
 const styles = StyleSheet.create({
   button: {
     width: '85%',
-    backgroundColor: COLORS.primary, // Cor normal A41856
+    backgroundColor: COLORS.primary, 
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
@@ -28,9 +27,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 2,
   },
-  // 👇 NOVO ESTILO PARA O BOTÃO DESABILITADO
   disabledButton: {
-    backgroundColor: '#CCCCCC', // Um cinza claro para indicar que não é clicável
+    backgroundColor: '#CCCCCC',
     elevation: 0,
   },
   buttonText: {

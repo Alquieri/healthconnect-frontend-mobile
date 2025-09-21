@@ -1,9 +1,8 @@
 import { Tabs } from 'expo-router';
-import { Platform, Button } from 'react-native';
+import { Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/context/AuthContext';
-import { HeaderLogo } from '../../src/components/HeaderLogo';
 import { COLORS } from '../../src/constants/theme';
 
 export default function AppLayout() {
@@ -58,18 +57,30 @@ export default function AppLayout() {
         name="profile"
         options={{
           title: 'Perfil',
-          headerRight: () => <HeaderLogo />,
-          headerLeft: () => <Button title="Sair" onPress={logout} />, 
+          headerTitle: 'Meu Perfil', 
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
           ),
         }}
       />
+      
       <Tabs.Screen
         name="appointments"
         options={{
           href: null, 
           headerShown: false,
+        }}
+      />
+      <Tabs.Screen
+        name="myDetails"
+        options={{
+          href: null,
+        }}
+      />
+       <Tabs.Screen
+        name="notifications"
+        options={{
+          href: null,
         }}
       />
     </Tabs>
