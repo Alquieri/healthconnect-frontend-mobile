@@ -13,15 +13,11 @@ export default function AuthLayout() {
         headerShown: true,
         headerTransparent: true,
         headerTitle: '',
-        headerRight: () => <HeaderLogo />,
-        // ✅ Header padronizado para auth
         headerStyle: {
           backgroundColor: 'transparent',
-          height: HEADER_CONSTANTS.minHeight + insets.top,
         },
-        headerRightContainerStyle: {
-          paddingRight: HEADER_CONSTANTS.paddingHorizontal,
-          paddingTop: HEADER_CONSTANTS.paddingTop,
+        headerTitleStyle: {
+          color: COLORS.text,
         },
       }}
     >
@@ -29,12 +25,34 @@ export default function AuthLayout() {
         name="login"
         options={{
           headerRight: () => <HeaderLogo />,
+          headerStyle: {
+            backgroundColor: 'transparent',
+          },
         }}
       />
+      
       <Stack.Screen
         name="register" 
         options={{
           headerRight: () => null, 
+          headerStyle: {
+            backgroundColor: 'transparent',
+          },
+        }}
+      />
+      
+      <Stack.Screen
+        name="registerDoctor" 
+        options={{
+          headerShown: true, // ✅ Permite header customizado
+          headerTransparent: false, // ✅ Header sólido
+          headerRight: () => null, // ✅ Sem logo no cadastro médico
+          headerStyle: {
+            backgroundColor: COLORS.white,
+          },
+          headerTitleStyle: {
+            color: COLORS.text,
+          },
         }}
       />
     </Stack>

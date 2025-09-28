@@ -94,6 +94,16 @@ export default function LoginScreen() {
                                     </TouchableOpacity>
                                 </Link>
                             </View>
+                            
+                            {/* ✅ Link médico com cor verde específica */}
+                            <View style={styles.doctorRedirect}>
+                                <Text style={styles.doctorRedirectText}>É médico? </Text>
+                                <Link href="/registerDoctor" asChild>
+                                    <TouchableOpacity style={styles.doctorLinkButton}>
+                                        <Text style={styles.doctorRegisterLink}>Cadastro Profissional</Text>
+                                    </TouchableOpacity>
+                                </Link>
+                            </View>
                         </View>
                     </View>
                 </ScrollView>
@@ -170,6 +180,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
+        marginBottom: SIZES.small,
     },
     registerRedirectText: {
         fontSize: SIZES.font,
@@ -182,6 +193,25 @@ const styles = StyleSheet.create({
     registerLink: {
         fontSize: SIZES.font,
         color: COLORS.primary,
+        fontWeight: 'bold',
+    },
+    doctorRedirect: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: SIZES.medium,
+    },
+    doctorRedirectText: {
+        fontSize: SIZES.font,
+        color: COLORS.textSecondary,
+    },
+    doctorLinkButton: {
+        paddingVertical: SIZES.tiny,
+        paddingHorizontal: SIZES.tiny,
+    },
+    doctorRegisterLink: {
+        fontSize: SIZES.font,
+        color: '#00A651', // ✅ Verde médico específico
         fontWeight: 'bold',
     },
 });

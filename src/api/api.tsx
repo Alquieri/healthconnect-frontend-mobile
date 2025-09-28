@@ -4,26 +4,52 @@ import axios, { InternalAxiosRequestConfig } from 'axios';
 import { baseURL } from './config';
 import { getToken, deleteToken } from './services/secure-store.service';
 
-// --- Função Central de Headers ---
-// Mantemos a sua função para criar headers padrão
-const createHeaders = () => ({
-  'Content-Type': 'application/json',
-  'ngrok-skip-browser-warning': 'true', 
-});
+console.log('[API] 🔧 Configurando API com baseURL:', baseURL);
 
-// --- Instâncias Axios ---
-// Nenhuma alteração aqui
+// API Pública (sem token)
 export const apiPublic = axios.create({
-  baseURL: baseURL,
-  headers: createHeaders(),
-  timeout: 15000, 
+  baseURL,
+  timeout: 30000, // ✅ Timeout de 30 segundos
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  },
 });
 
+// API Privada (com token)
 export const apiPrivate = axios.create({
-  baseURL: baseURL,
-  headers: createHeaders(),
-  timeout: 15000,
+  baseURL,
+  timeout: 30000, // ✅ Timeout de 30 segundos
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  },
 });
+
+// ✅ Interceptor para API Pública (adicionar logs)
+apiPublic.interceptors.request.use(
+  (config) => {
+    console.log(`[API-PUBLIC] 🚀 ${config.method?.toUpperCase()} ${config.url}`);
+    console.log(`[API-PUBLIC] 📦 Data:`, config.data);
+    return config;
+  },
+  (error) => {
+    console.error('[API-PUBLIC] ❌ Request error:', error);
+    return Promise.reject(error);
+  }
+);
+
+apiPublic.interceptors.response.use(
+  (response) => {
+    console.log(`[API-PUBLIC] ✅ ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`);
+    return response;
+  },
+  (error) => {
+    console.error(`[API-PUBLIC] ❌ ${error.response?.status || 'NETWORK'} ${error.config?.method?.toUpperCase()} ${error.config?.url}`);
+    console.error('[API-PUBLIC] ❌ Response data:', error.response?.data);
+    return Promise.reject(error);
+  }
+);
 
 // --- Interceptor de Request (Pedido) ---
 // Adiciona o token a todas as chamadas da apiPrivate
@@ -97,5 +123,3 @@ export const resetApiInstances = () => {
   // A lógica de reatribuir defaults não é estritamente necessária, pois os interceptors
   // já lidam com a atualização dinâmica do token, mas mantê-la não quebra nada.
 };
-
-console.log('[API] 🔧 API configurada com baseURL:', baseURL);

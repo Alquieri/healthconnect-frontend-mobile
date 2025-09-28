@@ -5,7 +5,7 @@ export namespace UserDto {
         email: string;
         phone: string;
         password: string;
-        sex:string;
+        sex: string;
         cpf: string;
         birthDate: string;
     }
@@ -15,9 +15,7 @@ export namespace UserDto {
         name: string;
         email: string;
         phone: string;
-        // Removi 'password' da resposta, pois geralmente não é retornado
         cpf: string;
         birthDate: string;
     }
-
 }
