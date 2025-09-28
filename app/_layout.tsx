@@ -10,7 +10,6 @@ SplashScreen.preventAutoHideAsync();
 
 function MainLayout() {
   const { status } = useAuth();
-  console.log('[MainLayout] Renderizando com status:', status);
 
   useEffect(() => {
     if (status !== 'pending') {
@@ -18,10 +17,13 @@ function MainLayout() {
     }
   }, [status]);
 
+  // Enquanto o status de autenticação é verificado, não mostramos nada.
+  // A SplashScreen do próprio dispositivo continua visível.
   if (status === 'pending') {
     return null;
   }
 
+  // A lógica principal foi alterada aqui
   return (
     <>
       <StatusBar 
@@ -31,11 +33,12 @@ function MainLayout() {
       />
       
       <Stack screenOptions={{ headerShown: false }}>
-        {status === 'authenticated' ? (
-          <Stack.Screen name="(app)" />
-        ) : (
-          <Stack.Screen name="(auth)" />
-        )}
+        {/* 1. O grupo (app) agora está SEMPRE acessível, tornando-se a entrada principal */}
+        <Stack.Screen name="(app)" />
+        
+        {/* 2. O grupo (auth) também fica disponível para ser navegado quando necessário */}
+        {/* Apresentá-lo como 'modal' cria uma experiência de login mais agradável */}
+        <Stack.Screen name="(auth)" options={{ presentation: 'modal' }} />
       </Stack>
     </>
   );

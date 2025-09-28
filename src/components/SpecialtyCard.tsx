@@ -18,9 +18,11 @@ export function SpecialtyCard({ item }: SpecialtyCardProps) {
   const handlePress = () => {
     router.push({
       pathname: '/searchDoctor',
-      params: { specialty: item.name,
-                specialtyId: item.id
-       }
+      params: { 
+        specialty: item.name,
+        specialtyId: item.id,
+        query: '' // ✅ Limpar query quando vier de especialidade
+      }
     });
   };
 
@@ -29,12 +31,14 @@ export function SpecialtyCard({ item }: SpecialtyCardProps) {
       <TouchableOpacity 
         style={styles.cardInnerContainer}
         onPress={handlePress}
-        activeOpacity={0.7}
+        activeOpacity={0.8}
       >
         <View style={styles.iconCircle}>
           <MaterialCommunityIcons name={item.icon} size={28} color={COLORS.white} />
         </View>
-        <Text style={styles.name}>{item.name}</Text>
+        <Text style={styles.cardText} numberOfLines={2}>
+          {item.name}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -63,12 +67,13 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
-  name: {
+  cardText: {
     fontSize: 12,
+    fontWeight: '600',
     color: COLORS.text,
-    fontWeight: 'bold',
     textAlign: 'center',
+    lineHeight: 14,
   },
 });

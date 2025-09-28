@@ -1,98 +1,134 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
-import { COLORS, SIZES } from '../constants/theme';
+import { TouchableOpacity, Text, StyleSheet, TouchableOpacityProps } from 'react-native';
+import { COLORS, SIZES, createResponsiveStyle } from '../constants/theme';
 
-interface CustomButtonProps {
-  label: string;
-  onPress: () => void;
-  variant?: 'primary' | 'secondary';
-  style?: ViewStyle;
-  labelStyle?: TextStyle;
-  disabled?: boolean;
-  loading?: boolean;
+interface CustomButtonProps extends TouchableOpacityProps {
+  title: string;
+  variant?: 'primary' | 'secondary' | 'outline';
+  size?: 'small' | 'medium' | 'large';
+  fullWidth?: boolean;
 }
 
-const CustomButton: React.FC<CustomButtonProps> = ({
-  label,
-  onPress,
+export function CustomButton({ 
+  title, 
+  disabled, 
   variant = 'primary',
+  size = 'medium',
+  fullWidth = true,
   style,
-  labelStyle,
-  disabled = false,
-  loading = false,
-}) => {
-  // --- Lógica de estilos ajustada para ser type-safe ---
-  
-  // 1. Começamos com os estilos base
-  const containerStyles: ViewStyle[] = [
-    styles.container,
-    variant === 'primary' ? styles.primaryContainer : styles.secondaryContainer,
-  ];
-  const labelStyles: TextStyle[] = [
-    styles.label,
-    variant === 'primary' ? styles.primaryLabel : styles.secondaryLabel,
+  ...props 
+}: CustomButtonProps) {
+  const buttonStyle = [
+    styles.button,
+    styles[variant],
+    styles[size],
+    fullWidth && styles.fullWidth,
+    disabled && styles.disabled,
+    style
   ];
 
-  // 2. Adicionamos os estilos condicionais (disabled/loading)
-  if (disabled || loading) {
-    containerStyles.push(styles.disabledContainer);
-    labelStyles.push(styles.disabledLabel);
-  }
-  
-  // 3. Adicionamos estilos customizados passados via props, se existirem
-  if (style) {
-    containerStyles.push(style);
-  }
-  if (labelStyle) {
-    labelStyles.push(labelStyle);
-  }
-  // --- Fim da lógica de estilos ajustada ---
+  const textStyle = [
+    styles.buttonText,
+    styles[`${variant}Text`],
+    styles[`${size}Text`],
+    disabled && styles.disabledText
+  ];
 
   return (
-    <TouchableOpacity style={containerStyles} onPress={onPress} disabled={disabled || loading}>
-      {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? COLORS.white : COLORS.primary} />
-      ) : (
-        <Text style={labelStyles}>{label}</Text>
-      )}
+    <TouchableOpacity style={buttonStyle} disabled={disabled} {...props}>
+      <Text style={textStyle}>{title}</Text>
     </TouchableOpacity>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    paddingVertical: SIZES.padding,
-    width: '100%',
+  button: {
     borderRadius: SIZES.radius,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 50,
   },
-  label: {
-    fontSize: SIZES.h4,
-    fontWeight: 'bold',
-  },
-  primaryContainer: {
+  
+  // Variantes
+  primary: {
     backgroundColor: COLORS.primary,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
-  primaryLabel: {
-    color: COLORS.white,
+  secondary: {
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
   },
-  secondaryContainer: {
+  outline: {
     backgroundColor: 'transparent',
     borderWidth: 2,
     borderColor: COLORS.primary,
+    // Sem sombra para evitar o efeito "por dentro"
   },
-  secondaryLabel: {
+  
+  // Tamanhos
+  small: {
+    paddingVertical: createResponsiveStyle(10),
+    paddingHorizontal: createResponsiveStyle(16),
+    minHeight: createResponsiveStyle(40),
+  },
+  medium: {
+    paddingVertical: createResponsiveStyle(14),
+    paddingHorizontal: createResponsiveStyle(20),
+    minHeight: createResponsiveStyle(50),
+  },
+  large: {
+    paddingVertical: createResponsiveStyle(18),
+    paddingHorizontal: createResponsiveStyle(24),
+    minHeight: createResponsiveStyle(58),
+  },
+  
+  // Largura total
+  fullWidth: {
+    width: SIZES.buttonWidth,
+  },
+  
+  // Estados
+  disabled: {
+    backgroundColor: '#CCCCCC',
+    elevation: 0,
+    shadowOpacity: 0,
+    borderColor: '#CCCCCC',
+  },
+  
+  // Textos
+  buttonText: {
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  primaryText: {
+    color: COLORS.white,
+  },
+  secondaryText: {
+    color: COLORS.text,
+  },
+  outlineText: {
     color: COLORS.primary,
   },
-  disabledContainer: {
-    backgroundColor: COLORS.border,
-    borderColor: COLORS.border, // Garantimos que a borda também muda
-    borderWidth: 2, // Mantemos a consistência da borda
+  smallText: {
+    fontSize: SIZES.small,
   },
-  disabledLabel: {
-    color: COLORS.placeholder,
+  mediumText: {
+    fontSize: SIZES.font,
+  },
+  largeText: {
+    fontSize: SIZES.medium,
+  },
+  disabledText: {
+    color: COLORS.textSecondary,
   },
 });
 
