@@ -64,6 +64,7 @@ export default function AppLayout() {
         }}
       />
       
+      {/* ✅ Telas que não aparecem na navbar */}
       <Tabs.Screen
         name="appointments"
         options={{
@@ -77,7 +78,15 @@ export default function AppLayout() {
           href: null,
         }}
       />
-       <Tabs.Screen
+      {/* ✅ MyScheduling removido da navbar, acessível apenas pelo perfil */}
+      <Tabs.Screen
+        name="MyScheduling"
+        options={{
+          href: null,
+          headerShown: false,
+        }}
+      />
+      <Tabs.Screen
         name="notifications"
         options={{
           href: null,

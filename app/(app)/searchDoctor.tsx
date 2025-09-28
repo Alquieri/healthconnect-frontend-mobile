@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -15,11 +15,11 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getAllDoctors, getAllDoctorsBySpeciality } from '../../src/api/services/doctor';
 import { getAllSpecialities } from '../../src/api/services/speciality';
-import { COLORS } from '../../src/constants/theme';
+import { COLORS, SIZES, createResponsiveStyle } from '../../src/constants/theme';
+import { HEADER_CONSTANTS } from '../../src/constants/layout';
 import { useAuth } from '../../src/context/AuthContext';
 
 // --- INTERFACES E TIPOS ---
-
 interface Doctor {
   id: string;
   name: string;
@@ -39,7 +39,6 @@ interface Specialty {
 }
 
 // --- COMPONENTE PRINCIPAL ---
-
 export default function SearchDoctorScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -47,173 +46,249 @@ export default function SearchDoctorScreen() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [loading, setLoading] = useState(false);
-  const [specialtiesLoading, setSpecialtiesLoading] = useState(true);
+  const [specialtiesLoading, setSpecialtiesLoading] = useState(false);
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>('');
+  const [selectedSpecialtyId, setSelectedSpecialtyId] = useState<string>('');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    loadSpecialties();
+  // Memoizar os médicos filtrados
+  const filteredDoctors = useMemo(() => {
+    if (!searchQuery.trim()) return doctors;
     
-    const specialtyFromParams = params.specialty as string;
-    const specialtyIdFromParams = params.specialtyId as string;
+    const query = searchQuery.toLowerCase().trim();
     
-    if (specialtyFromParams && specialtyIdFromParams) {
-      setSelectedSpecialty(specialtyFromParams);
-      loadDoctorsBySpecialty(specialtyFromParams, specialtyIdFromParams);
-    } else {
-      loadAllDoctors();
+    return doctors.filter(doctor => {
+      const nameMatch = doctor.name.toLowerCase().includes(query);
+      const specialtyMatch = doctor.specialty.toLowerCase().includes(query);
+      const rqeMatch = doctor.rqe.toLowerCase().includes(query);
+      const cleanName = doctor.name.toLowerCase().replace(/^dr\.?\s*/i, '');
+      const cleanNameMatch = cleanName.includes(query);
+      
+      return nameMatch || specialtyMatch || rqeMatch || cleanNameMatch;
+    });
+  }, [doctors, searchQuery]);
+
+  // Função para extrair dados do médico da API
+  const extractDoctorData = useCallback((doctor: any, fallbackSpecialty?: string) => {
+    let specialty = 'Especialidade não informada';
+    let rqe = 'RQE não informado';
+    
+    if (doctor.specialities && Array.isArray(doctor.specialities) && doctor.specialities.length > 0) {
+      specialty = doctor.specialities[0].specialityName || specialty;
+      rqe = doctor.specialities[0].rqeNumber || rqe;
+    } else if (doctor.specialty?.name) {
+      specialty = doctor.specialty.name;
+    } else if (doctor.specialty && typeof doctor.specialty === 'string') {
+      specialty = doctor.specialty;
+    } else if (fallbackSpecialty) {
+      specialty = fallbackSpecialty;
     }
-  }, [params.specialty, params.specialtyId]); 
 
-  useEffect(() => {
-    const queryFromParams = params.query as string;
-    if (queryFromParams) {
-      setSearchQuery(queryFromParams);
-    }
-  }, [params.query]);
+    const formattedDoctor = {
+      id: doctor.id,
+      name: doctor.name,
+      specialty: specialty,
+      rqe: rqe,
+      yearsExperience: doctor.yearsExperience || 5,
+      rating: doctor.rating || 4.5,
+      patientStories: doctor.patientStories || 50,
+      location: doctor.location || 'Curitiba, PR',
+      image: doctor.profileImage || `https://i.pravatar.cc/200?u=${doctor.id}`,
+      isOnline: doctor.isOnline || Math.random() > 0.5,
+    };
+    
+    return formattedDoctor;
+  }, []);
 
-  useEffect(() => {
-    filterDoctors();
-  }, [searchQuery, doctors]);
-
-  const loadSpecialties = async () => {
+  // Carregar especialidades apenas uma vez
+  const loadSpecialties = useCallback(async () => {
+    if (specialties.length > 0) return;
+    
     try {
       setSpecialtiesLoading(true);
-      const apiSpecialties = await getAllSpecialities();
-      const mappedSpecialties: Specialty[] = apiSpecialties.map((specialty: any) => ({
-        id: specialty.id,
-        name: specialty.name,
-      }));
-      setSpecialties(mappedSpecialties);
+      const specialtiesData = await getAllSpecialities();
+      setSpecialties(specialtiesData);
     } catch (error) {
-      console.error('Erro ao carregar especialidades:', error);
-      setSpecialties([{ id: '1', name: 'Cardiologia' }, { id: '2', name: 'Dermatologia' }]);
+      Alert.alert('Erro', 'Não foi possível carregar as especialidades');
     } finally {
       setSpecialtiesLoading(false);
     }
-  };
+  }, [specialties.length]);
 
-  const loadAllDoctors = async () => {
-    try {
-        setLoading(true);
-        const response = await getAllDoctors();
-        const mappedDoctors: Doctor[] = response.map((doctor: any) => ({
-          id: doctor.id,
-          name: doctor.name || 'Nome não informado',
-          specialty: doctor.speciality || 'Especialidade não informada',
-          rqe: doctor.rqe || 'RQE não informado',
-          yearsExperience: Math.floor(Math.random() * 15) + 5,
-          rating: parseFloat((Math.random() * 2 + 3).toFixed(1)),
-          patientStories: Math.floor(Math.random() * 100) + 20, 
-          location: 'Água Verde, Curitiba, Brazil',
-          image: 'https://via.placeholder.com/80x80', 
-          isOnline: Math.random() > 0.5, 
-        }));
-        setDoctors(mappedDoctors);
-    } catch (error) {
-        console.error('Erro ao carregar médicos:', error);
-        Alert.alert('Erro', 'Não foi possível carregar a lista de médicos');
-    } finally {
-        setLoading(false);
-    }
-  };
-
-  const loadDoctorsBySpecialty = async (specialtyName: string, specialtyId: string) => {
+  // Carregar todos os médicos
+  const loadAllDoctors = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await getAllDoctorsBySpeciality(specialtyId);
-      const mappedDoctors: Doctor[] = response.map((doctor: any) => ({
-        id: doctor.id, name: doctor.name || 'Nome não informado',
-        specialty: doctor.specialty || specialtyName, rqe: doctor.rqe || 'RQE não informado',
-        yearsExperience: Math.floor(Math.random() * 15) + 5, rating: parseFloat((Math.random() * 2 + 3).toFixed(1)),
-        patientStories: Math.floor(Math.random() * 100) + 20, location: 'Água Verde, Curitiba, Brazil',
-        image: 'https://via.placeholder.com/80x80', isOnline: Math.random() > 0.5,
-      }));
-      setDoctors(mappedDoctors);
+      const doctorsData = await getAllDoctors();
+      
+      const formattedDoctors = doctorsData.map((doctor: any) => {
+        return extractDoctorData(doctor);
+      });
+      
+      setDoctors(formattedDoctors);
     } catch (error: any) {
-      if (error.response?.status === 401) {
-        try {
-          await refreshAuth();
-          await loadDoctorsBySpecialty(specialtyName, specialtyId);
-        } catch (retryError) {
-          await forceLogout();
-          Alert.alert('Sessão Expirada', 'A sua sessão expirou.');
+      Alert.alert('Erro', 'Não foi possível carregar os médicos');
+      setDoctors([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [extractDoctorData]);
+
+  // Carregar médicos por especialidade
+  const loadDoctorsBySpecialty = useCallback(async (specialtyName: string, specialtyId: string) => {
+    try {
+      setLoading(true);
+      const doctorsData = await getAllDoctorsBySpeciality(specialtyId);
+      
+      if (!doctorsData || doctorsData.length === 0) {
+        setDoctors([]);
+        Alert.alert(
+          'Sem médicos disponíveis', 
+          `Não encontramos médicos para a especialidade "${specialtyName}" no momento.`
+        );
+        return;
+      }
+
+      // Filtrar médicos pela especialidade real
+      const filteredBySpecialty = doctorsData.filter((doctor: any) => {
+        if (doctor.specialities && Array.isArray(doctor.specialities) && doctor.specialities.length > 0) {
+          const doctorSpecialty = doctor.specialities[0].specialityName;
+          return doctorSpecialty === specialtyName;
         }
+        return false;
+      });
+
+      if (filteredBySpecialty.length === 0) {
+        setDoctors([]);
+        Alert.alert(
+          'Especialidade sem médicos', 
+          `A API não retornou médicos específicos para "${specialtyName}".`
+        );
+        return;
+      }
+
+      const formattedDoctors = filteredBySpecialty.map((doctor: any) => {
+        return extractDoctorData(doctor, specialtyName);
+      });
+      
+      setDoctors(formattedDoctors);
+      
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        setDoctors([]);
+        Alert.alert(
+          'Especialidade sem médicos', 
+          `A especialidade "${specialtyName}" não possui médicos cadastrados.`
+        );
       } else {
-        Alert.alert('Erro', 'Não foi possível carregar médicos desta especialidade.');
+        Alert.alert('Erro', `Erro ao carregar médicos da especialidade ${specialtyName}: ${error.message}`);
+        setDoctors([]);
       }
     } finally {
       setLoading(false);
     }
-  };
+  }, [extractDoctorData]);
 
-  const filterDoctors = () => {
-    let filtered = doctors;
-    if (searchQuery.trim()) {
-        filtered = filtered.filter(doctor => 
-        doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doctor.specialty.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-    }
-    setFilteredDoctors(filtered);
-  };
+  // Inicialização com useEffect
+  useEffect(() => {
+    const initializeScreen = async () => {
+      loadSpecialties();
 
-  const handleSpecialtyPress = (specialty: Specialty) => {
+      const queryParam = params.query as string;
+      const specialtyParam = params.specialty as string;
+      const specialtyIdParam = params.specialtyId as string;
+      
+      if (queryParam && queryParam.trim()) {
+        setSearchQuery(queryParam.trim());
+        setSelectedSpecialty('');
+        setSelectedSpecialtyId('');
+        await loadAllDoctors();
+      } else if (specialtyParam && specialtyIdParam) {
+        setSelectedSpecialty(specialtyParam);
+        setSelectedSpecialtyId(specialtyIdParam);
+        setSearchQuery('');
+        await loadDoctorsBySpecialty(specialtyParam, specialtyIdParam);
+      } else {
+        setSearchQuery('');
+        setSelectedSpecialty('');
+        setSelectedSpecialtyId('');
+        await loadAllDoctors();
+      }
+    };
+
+    initializeScreen();
+  }, [params.query, params.specialty, params.specialtyId]);
+
+  const handleSpecialtyPress = useCallback((specialty: Specialty) => {
     if (loading) return;
     
     if (selectedSpecialty === specialty.name) {
       setSelectedSpecialty('');
+      setSelectedSpecialtyId('');
+      setSearchQuery('');
       loadAllDoctors();
     } else {
       setSelectedSpecialty(specialty.name);
+      setSelectedSpecialtyId(specialty.id);
+      setSearchQuery('');
       loadDoctorsBySpecialty(specialty.name, specialty.id);
     }
-    setSearchQuery(''); 
-  };
+  }, [loading, selectedSpecialty, loadAllDoctors, loadDoctorsBySpecialty]);
 
-  const toggleFavorite = (doctorId: string) => {
-    const newFavorites = new Set(favorites);
-    if (newFavorites.has(doctorId)) {
-      newFavorites.delete(doctorId);
-    } else {
-      newFavorites.add(doctorId);
-    }
-    setFavorites(newFavorites);
-  };
+  const clearSearch = useCallback(() => {
+    setSearchQuery('');
+    setSelectedSpecialty('');
+    setSelectedSpecialtyId('');
+    loadAllDoctors();
+  }, [loadAllDoctors]);
 
-  const navigateToAppointment = (doctor: Doctor) => {
+  const toggleFavorite = useCallback((doctorId: string) => {
+    setFavorites(prev => {
+      const newFavorites = new Set(prev);
+      if (newFavorites.has(doctorId)) {
+        newFavorites.delete(doctorId);
+      } else {
+        newFavorites.add(doctorId);
+      }
+      return newFavorites;
+    });
+  }, []);
+
+  const navigateToAppointment = useCallback((doctor: Doctor) => {
     router.push({
       pathname: '/appointments',
       params: { doctorId: doctor.id }
     });
-  };
+  }, [router]);
 
-  const clearSearch = () => {
-    setSearchQuery('');
-    setSelectedSpecialty('');
-    loadAllDoctors();
-  };
-
-  const renderSpecialtyItem = ({ item }: { item: Specialty }) => (
+  // Renderização de especialidades
+  const renderSpecialtyItem = useCallback(({ item }: { item: Specialty }) => (
     <TouchableOpacity
       style={[
-        styles.specialtyCard,
-        selectedSpecialty === item.name && styles.selectedSpecialtyCard
+        styles.specialtyChip,
+        selectedSpecialty === item.name && styles.selectedSpecialtyChip
       ]}
       onPress={() => handleSpecialtyPress(item)}
-      activeOpacity={0.7}
+      activeOpacity={0.8}
     >
-      <Text style={[styles.specialtyText, selectedSpecialty === item.name && styles.selectedSpecialtyText]}>
+      <Text style={[
+        styles.specialtyText, 
+        selectedSpecialty === item.name && styles.selectedSpecialtyText
+      ]}>
         {item.name}
       </Text>
     </TouchableOpacity>
-  );
+  ), [selectedSpecialty, handleSpecialtyPress]);
 
-  const renderDoctorItem = ({ item }: { item: Doctor }) => (
-    <View style={styles.doctorCard}>
+  // Renderização de médicos
+  const renderDoctorItem = useCallback(({ item }: { item: Doctor }) => (
+    <TouchableOpacity 
+      style={styles.doctorCard}
+      onPress={() => navigateToAppointment(item)}
+      activeOpacity={0.95}
+    >
       <View style={styles.doctorHeader}>
         <View style={styles.doctorImageContainer}>
           <Image
@@ -223,55 +298,193 @@ export default function SearchDoctorScreen() {
           />
           {item.isOnline && <View style={styles.onlineIndicator} />}
         </View>
+        
         <View style={styles.doctorInfo}>
-          <Text style={styles.doctorName}>Dr. {item.name}</Text>
-          <Text style={styles.doctorSpecialty}>Specialist {item.specialty}</Text>
-          <Text style={styles.doctorExperience}>
-            {item.yearsExperience} Years experience
+          <Text style={styles.doctorName} numberOfLines={1}>
+            {item.name}
           </Text>
+          <Text style={styles.doctorSpecialty} numberOfLines={1}>
+            {item.specialty}
+          </Text>
+          <Text style={styles.doctorRqe} numberOfLines={1}>
+            {item.rqe}
+          </Text>
+          <Text style={styles.doctorExperience}>
+            {item.yearsExperience || 5}+ anos de experiência
+          </Text>
+          
           <View style={styles.doctorStats}>
             <View style={styles.statItem}>
-              <View style={[styles.statDot, { backgroundColor: '#4CAF50' }]} />
-              <Text style={styles.statText}>{item.rating}★</Text>
+              <Ionicons name="star" size={14} color="#FFD700" />
+              <Text style={styles.statText}>
+                {item.rating?.toFixed(1) || '4.5'} ({item.patientStories || 50}+ pacientes)
+              </Text>
             </View>
             <View style={styles.statItem}>
-              <View style={[styles.statDot, { backgroundColor: '#2196F3' }]} />
-              <Text style={styles.statText}>{item.patientStories} Histórico de pacientes</Text>
+              <Ionicons name="location-outline" size={14} color={COLORS.textSecondary} />
+              <Text style={styles.statText} numberOfLines={1}>
+                {item.location || 'Curitiba, PR'}
+              </Text>
             </View>
           </View>
-          <View style={styles.locationContainer}>
-            <Ionicons name="location-outline" size={14} color={COLORS.textSecondary} />
-            <Text style={styles.locationText}>{item.location}</Text>
-          </View>
         </View>
+      
         <TouchableOpacity 
           onPress={() => toggleFavorite(item.id)}
           style={styles.favoriteButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons 
             name={favorites.has(item.id) ? "heart" : "heart-outline"} 
-            size={24} 
+            size={22} 
             color={favorites.has(item.id) ? COLORS.error : COLORS.textSecondary} 
           />
         </TouchableOpacity>
       </View>
-      <TouchableOpacity 
-        style={styles.consultButton}
-        onPress={() => navigateToAppointment(item)}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.consultButtonText}>Consulta</Text>
-      </TouchableOpacity>
-    </View>
-  );
+      
+      <View style={styles.consultButtonContainer}>
+        <Text style={styles.consultButtonText}>Agendar Consulta</Text>
+        <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
+      </View>
+    </TouchableOpacity>
+  ), [navigateToAppointment, toggleFavorite, favorites]);
+
+  // Header da lista
+  const ListHeaderComponent = useMemo(() => (
+    <>
+      {/* Search Section */}
+      <View style={styles.searchSection}>
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color={COLORS.textSecondary} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Busque por nome ou especialidade..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholderTextColor={COLORS.placeholder}
+          />
+          {(searchQuery || selectedSpecialty) && (
+            <TouchableOpacity 
+              onPress={clearSearch} 
+              style={styles.clearButton}
+              hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+            >
+              <Ionicons name="close-circle" size={20} color={COLORS.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      {/* Specialties Section */}
+      <View style={styles.specialtiesSection}>
+        <Text style={styles.sectionTitle}>Especialidades</Text>
+        {specialtiesLoading ? (
+          <View style={styles.specialtiesLoadingContainer}>
+            <ActivityIndicator size="small" color={COLORS.primary} />
+          </View>
+        ) : (
+          <FlatList
+            data={specialties}
+            renderItem={renderSpecialtyItem}
+            keyExtractor={(item) => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.specialtiesList}
+            initialNumToRender={5}
+            maxToRenderPerBatch={5}
+            windowSize={10}
+          />
+        )}
+      </View>
+
+      {/* Results Header */}
+      <View style={styles.resultsHeader}>
+        <Text style={styles.resultsCount}>
+          {loading ? 'Carregando...' : 
+           searchQuery ? 
+           `${filteredDoctors.length} resultados para "${searchQuery}"` :
+           selectedSpecialty ? 
+           `${filteredDoctors.length} médicos em ${selectedSpecialty}` : 
+           `${filteredDoctors.length} médicos disponíveis`}
+        </Text>
+        
+        {/* Indicador de filtro ativo */}
+        {(searchQuery || selectedSpecialty) && (
+          <View style={styles.activeFilterContainer}>
+            <Ionicons 
+              name={searchQuery ? "search" : "medical"} 
+              size={14} 
+              color={COLORS.primary} 
+            />
+            <Text style={styles.activeFilterText}>
+              {searchQuery ? `Busca: "${searchQuery}"` : `Filtro: ${selectedSpecialty}`}
+            </Text>
+          </View>
+        )}
+      </View>
+    </>
+  ), [searchQuery, selectedSpecialty, clearSearch, specialtiesLoading, specialties, renderSpecialtyItem, loading, filteredDoctors.length]);
+
+  const ListEmptyComponent = useMemo(() => {
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>
+            {searchQuery ? `Buscando por "${searchQuery}"...` :
+             selectedSpecialty ? `Carregando médicos de ${selectedSpecialty}...` : 
+             'Carregando médicos...'}
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.emptyContainer}>
+        <Ionicons 
+          name={searchQuery ? "search-outline" : "medical-outline"} 
+          size={64} 
+          color={COLORS.placeholder} 
+        />
+        <Text style={styles.emptyTitle}>
+          {searchQuery ? 
+           `Nenhum resultado para "${searchQuery}"` :
+           selectedSpecialty ? 
+           `Nenhum médico encontrado em ${selectedSpecialty}` : 
+           'Nenhum médico encontrado'}
+        </Text>
+        <Text style={styles.emptyText}>
+          {searchQuery ? 
+           'Tente usar termos diferentes ou procure por especialidade.' :
+           selectedSpecialty ? 
+           'Esta especialidade não possui médicos cadastrados no momento.' :
+           'Tente ajustar sua busca ou selecionar uma especialidade diferente.'}
+        </Text>
+        
+        {(searchQuery || selectedSpecialty) && (
+          <TouchableOpacity 
+            style={styles.clearFiltersButton}
+            onPress={clearSearch}
+          >
+            <Text style={styles.clearFiltersText}>Limpar Filtros</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  }, [loading, searchQuery, selectedSpecialty, clearSearch]);
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* ✅ Header com padding ajustado para evitar conflito com câmera */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity 
+          onPress={() => router.back()} 
+          style={styles.backButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
           <Ionicons name="chevron-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Encontre o Doutor</Text>
+        <Text style={styles.headerTitle}>Encontre seu Médico</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -280,297 +493,313 @@ export default function SearchDoctorScreen() {
         renderItem={renderDoctorItem}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.doctorsList}
-        ListHeaderComponent={
-          <>
-            <View style={styles.searchContainer}>
-              <View style={styles.searchBar}>
-                <Ionicons name="search" size={20} color={COLORS.textSecondary} style={styles.searchIcon} />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Busque"
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  placeholderTextColor={COLORS.placeholder}
-                />
-                {(searchQuery || selectedSpecialty) && (
-                  <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
-                    <Ionicons name="close" size={20} color={COLORS.textSecondary} />
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
-
-            <View style={styles.specialtiesSection}>
-              <Text style={styles.sectionTitle}>Especialidades</Text>
-              {specialtiesLoading ? (
-                <ActivityIndicator size="small" color={COLORS.primary} style={{ marginVertical: 20 }}/>
-              ) : (
-                <FlatList
-                  data={specialties}
-                  renderItem={renderSpecialtyItem}
-                  keyExtractor={(item) => item.id}
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.specialtiesList}
-                />
-              )}
-            </View>
-
-            <View style={styles.resultHeader}>
-            </View>
-          </>
-        }
-        ListEmptyComponent={
-          loading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={COLORS.primary} />
-            </View>
-          ) : (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="medical-outline" size={48} color={COLORS.placeholder} />
-              <Text style={styles.emptyTitle}>Nenhum médico encontrado</Text>
-              <Text style={styles.emptyText}>
-                Tente ajustar a sua busca.
-              </Text>
-            </View>
-          )
-        }
+        contentContainerStyle={styles.listContainer}
+        ListHeaderComponent={ListHeaderComponent}
+        ListEmptyComponent={ListEmptyComponent}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={21}
+        removeClippedSubviews={true}
       />
     </SafeAreaView>
   );
 }
 
-// --- ESTILOS ---
+// ✅ Estilos atualizados com posicionamento igual ao HomeHeader
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  
+  // ✅ Header padronizado usando as constantes
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: HEADER_CONSTANTS.paddingHorizontal,
+    paddingTop: HEADER_CONSTANTS.paddingTop,
+    paddingBottom: HEADER_CONSTANTS.paddingBottom,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    minHeight: HEADER_CONSTANTS.minHeight,
   },
   backButton: {
-    padding: 4,
+    padding: SIZES.tiny,
   },
   headerTitle: {
     flex: 1,
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: HEADER_CONSTANTS.titleFontSize,
+    fontWeight: HEADER_CONSTANTS.titleFontWeight,
     color: COLORS.text,
     textAlign: 'center',
-    marginHorizontal: 16,
+    marginHorizontal: SIZES.medium,
   },
   headerRight: {
-    width: 32,
+    width: createResponsiveStyle(32),
+  },
+
+  // List Container
+  listContainer: {
+    flexGrow: 1,
+    paddingBottom: SIZES.large,
+  },
+
+  // Search Section
+  searchSection: {
+    backgroundColor: COLORS.white,
+    paddingHorizontal: SIZES.containerPadding,
+    paddingVertical: SIZES.large,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
   searchContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: COLORS.white,
-  },
-  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    paddingHorizontal: 16,
+    backgroundColor: COLORS.background,
+    borderRadius: SIZES.radius * 2,
+    paddingHorizontal: SIZES.padding,
+    paddingVertical: SIZES.small,
     borderWidth: 1,
     borderColor: COLORS.border,
-    elevation: 3,
+    elevation: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
-  },
-  searchIcon: {
-    marginRight: 12,
+    shadowRadius: 2,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: SIZES.font,
     color: COLORS.text,
-    height: 48,
+    marginLeft: SIZES.small,
+    paddingVertical: SIZES.tiny,
   },
   clearButton: {
-    padding: 4,
+    padding: SIZES.tiny,
   },
+
+  // Specialties Section
   specialtiesSection: {
-    paddingVertical: 24, // Aumentado para mais respiro
     backgroundColor: COLORS.white,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    paddingVertical: SIZES.large,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold', // Aumentado o peso da fonte
+    fontSize: SIZES.medium,
+    fontWeight: '700',
     color: COLORS.text,
-    paddingHorizontal: 20,
-    marginBottom: 16, // Aumentado para mais respiro
+    paddingHorizontal: SIZES.containerPadding,
+    marginBottom: SIZES.medium,
+  },
+  specialtiesLoadingContainer: {
+    paddingVertical: SIZES.large,
+    alignItems: 'center',
   },
   specialtiesList: {
-    paddingHorizontal: 20,
+    paddingHorizontal: SIZES.containerPadding,
+    gap: SIZES.small,
   },
-  specialtyCard: {
+  specialtyChip: {
     backgroundColor: 'transparent',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    borderWidth: 1.5, // Borda um pouco mais grossa
-    borderColor: COLORS.primary,
-    marginRight: 12,
+    paddingVertical: SIZES.small,
+    paddingHorizontal: SIZES.medium,
+    marginHorizontal: SIZES.tiny,
+    borderRadius: SIZES.radius * 3,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    marginRight: SIZES.small,
   },
-  selectedSpecialtyCard: {
+  selectedSpecialtyChip: {
     backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
   specialtyText: {
-    color: COLORS.primary,
-    fontSize: 14,
+    color: COLORS.text,
+    fontSize: SIZES.small,
     fontWeight: '600',
   },
   selectedSpecialtyText: {
     color: COLORS.white,
   },
-  resultHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 30, // Aumentado para o título descer
-    paddingBottom: 12,
+
+  // Results Header
+  resultsHeader: {
+    paddingHorizontal: SIZES.containerPadding,
+    paddingVertical: SIZES.medium,
+    backgroundColor: COLORS.background,
   },
-  resultCount: {
-    fontSize: 14,
+  resultsCount: {
+    fontSize: SIZES.small,
     color: COLORS.textSecondary,
     fontWeight: '500',
   },
-  loadingContainer: {
+  
+  activeFilterContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 80, // Aumentado o espaçamento
+    marginTop: SIZES.tiny,
+    paddingHorizontal: SIZES.small,
+    paddingVertical: SIZES.tiny,
+    backgroundColor: COLORS.primary + '10',
+    borderRadius: SIZES.radius,
+    alignSelf: 'flex-start',
   },
-  doctorsList: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+  activeFilterText: {
+    fontSize: SIZES.xSmall,
+    color: COLORS.primary,
+    fontWeight: '600',
+    marginLeft: SIZES.tiny,
   },
+
+  // Doctor Card
   doctorCard: {
     backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: SIZES.radius * 2,
+    marginHorizontal: SIZES.containerPadding,
+    marginBottom: SIZES.medium,
+    padding: SIZES.large,
     elevation: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
   },
   doctorHeader: {
     flexDirection: 'row',
-    marginBottom: 16,
+    marginBottom: SIZES.medium,
   },
   doctorImageContainer: {
     position: 'relative',
-    marginRight: 16,
+    marginRight: SIZES.medium,
   },
   doctorImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: createResponsiveStyle(80),
+    height: createResponsiveStyle(80),
+    borderRadius: createResponsiveStyle(40),
+    backgroundColor: COLORS.border,
   },
   onlineIndicator: {
     position: 'absolute',
-    bottom: 4,
-    right: 4,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    bottom: createResponsiveStyle(4),
+    right: createResponsiveStyle(4),
+    width: createResponsiveStyle(16),
+    height: createResponsiveStyle(16),
+    borderRadius: createResponsiveStyle(8),
     backgroundColor: '#4CAF50',
     borderWidth: 2,
     borderColor: COLORS.white,
   },
   doctorInfo: {
     flex: 1,
+    justifyContent: 'center',
   },
   doctorName: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: SIZES.medium,
+    fontWeight: '700',
     color: COLORS.text,
-    marginBottom: 4,
+    marginBottom: SIZES.tiny,
   },
   doctorSpecialty: {
-    fontSize: 14,
+    fontSize: SIZES.font,
     color: COLORS.primary,
-    fontWeight: '500',
-    marginBottom: 4,
+    fontWeight: '600',
+    marginBottom: SIZES.tiny,
+  },
+  doctorRqe: {
+    fontSize: SIZES.xSmall,
+    color: COLORS.textSecondary,
+    marginBottom: SIZES.tiny,
   },
   doctorExperience: {
-    fontSize: 12,
+    fontSize: SIZES.small,
     color: COLORS.textSecondary,
-    marginBottom: 8,
+    marginBottom: SIZES.small,
   },
   doctorStats: {
-    marginBottom: 8,
+    gap: SIZES.tiny,
   },
   statItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
-  },
-  statDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 8,
+    marginBottom: SIZES.tiny,
   },
   statText: {
-    fontSize: 12,
+    fontSize: SIZES.xSmall,
     color: COLORS.textSecondary,
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  locationText: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    marginLeft: 4,
+    marginLeft: SIZES.tiny,
+    flex: 1,
   },
   favoriteButton: {
-    padding: 8,
+    padding: SIZES.small,
+    alignSelf: 'flex-start',
   },
-  consultButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 8,
-    paddingVertical: 12,
+
+  // Consult Button
+  consultButtonContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.background,
+    borderRadius: SIZES.radius,
+    paddingVertical: SIZES.small,
+    paddingHorizontal: SIZES.medium,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
   },
   consultButtonText: {
-    color: COLORS.white,
-    fontSize: 16,
+    color: COLORS.primary,
+    fontSize: SIZES.font,
     fontWeight: '600',
+    marginRight: SIZES.tiny,
+  },
+
+  // Loading & Empty States
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: SIZES.width * 0.2,
+  },
+  loadingText: {
+    fontSize: SIZES.font,
+    color: COLORS.textSecondary,
+    marginTop: SIZES.medium,
+    textAlign: 'center',
   },
   emptyContainer: {
     alignItems: 'center',
-    paddingVertical: 80, // Aumentado o espaçamento
+    paddingVertical: SIZES.width * 0.15,
+    paddingHorizontal: SIZES.containerPadding,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: SIZES.large,
+    fontWeight: '700',
     color: COLORS.text,
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: SIZES.large,
+    marginBottom: SIZES.small,
+    textAlign: 'center',
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: SIZES.font,
     color: COLORS.textSecondary,
     textAlign: 'center',
-    lineHeight: 20,
-    paddingHorizontal: 32,
+    lineHeight: SIZES.large,
+    maxWidth: SIZES.width * 0.8,
+  },
+  clearFiltersButton: {
+    marginTop: SIZES.medium,
+    paddingHorizontal: SIZES.large,
+    paddingVertical: SIZES.small,
+    backgroundColor: COLORS.primary,
+    borderRadius: SIZES.radius,
+  },
+  clearFiltersText: {
+    color: COLORS.white,
+    fontSize: SIZES.font,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
-
