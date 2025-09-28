@@ -3,87 +3,81 @@ import { View, Text, StyleSheet, SafeAreaView, Image, ScrollView, TouchableOpaci
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
-import { COLORS } from '../../src/constants/theme';
-import { getMyProfile } from '../../src/api/services/user';
-// import { User } from '../../src/api/models/user'; // Removido para corrigir o erro
-import { AxiosError } from 'axios';
+import { COLORS, SIZES } from '../../src/constants/theme';
+import { getClientProfileByUserId } from '../../src/api/services/patient'
+import { CustomButton } from '../../src/components/CustomButton';
+import { ResponsiveContainer } from '../../src/components/ResponsiveContainer';
+import { getDoctorByIdDetail } from '../../src/api/services/doctor';
+import { HEADER_CONSTANTS } from '../../src/constants/layout';
 
-// 1. A interface 'User' agora está definida diretamente aqui.
-interface User {
+interface UserProfile {
   id: string;
   name: string;
   email: string;
   phone: string;
   cpf: string;
   birthDate: string;
+  userId?: string;
+  sex?: string;
 }
 
-export default function ProfileScreen() {
-  const { logout, refreshAuth, forceLogout } = useAuth();
+// ✅ Componente para usuários não logados
+const GuestProfileView = () => {
+  const router = useRouter();
+  return (
+    <ResponsiveContainer centered>
+      <View style={styles.guestContainer}>
+        <Ionicons name="person-circle-outline" size={SIZES.width * 0.25} color={COLORS.textSecondary} />
+        <Text style={styles.guestTitle}>Acesse sua Conta</Text>
+        <Text style={styles.guestSubtitle}>
+          Faça login ou crie uma conta para agendar consultas e gerir o seu perfil.
+        </Text>
+        
+        <View style={styles.guestButtonsContainer}>
+          <CustomButton 
+            title="Entrar" 
+            onPress={() => router.push('/login')} 
+            style={styles.guestButton}
+          />
+          
+          <CustomButton 
+            title="Criar Conta" 
+            variant="outline"
+            onPress={() => router.push('/register')}
+          />
+        </View>
+      </View>
+    </ResponsiveContainer>
+  );
+};
+
+interface UserProfileViewProps {
+  userProfile: UserProfile;
+  onLogout: () => void;
+}
+
+// ✅ Componente para usuários logados
+const UserProfileView: React.FC<UserProfileViewProps> = ({ userProfile, onLogout }) => {
   const router = useRouter();
 
-  const [userProfile, setUserProfile] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Dados para os itens da lista de menu
   const menuOptions = [
     { id: '1', label: 'Meus Dados', icon: 'person-circle-outline' as const, action: () => router.push('/myDetails') },
-    { id: '2', label: 'Meus Agendamentos', icon: 'calendar-outline' as const, action: () => console.log('Navegar para Agendamentos') },
+    { id: '2', label: 'Meus Agendamentos', icon: 'calendar-outline' as const, action: () => router.push('/MyScheduling') },
     { id: '3', label: 'Médicos Favoritos', icon: 'heart-outline' as const, action: () => console.log('Navegar para Favoritos') },
-    { id: '4', label: 'Ajuda e Suporte', icon: 'help-circle-outline' as const, action: () => console.log('Navegar para Ajuda') },
   ];
 
-  useEffect(() => {
-    const fetchUserProfile = async (isRetry = false) => {
-      try {
-        if (!isRetry) setLoading(true);
-        const profileData = await getMyProfile();
-        setUserProfile(profileData);
-      } catch (error: any) {
-        if (error instanceof AxiosError && error.response?.status === 401 && !isRetry) {
-          try {
-            console.log('[ProfileScreen] 🔄 Sessão expirada, a tentar refresh...');
-            await refreshAuth();
-            await fetchUserProfile(true); // Tenta buscar o perfil novamente após o refresh
-          } catch (retryError) {
-            console.error('[ProfileScreen] ❌ Falha no refresh, a forçar logout:', retryError);
-            await forceLogout();
-            Alert.alert('Sessão Expirada', 'A sua sessão expirou. Por favor, faça login novamente.');
-          }
-        } else {
-          console.error("Erro ao buscar perfil na tela de Perfil:", error);
-          Alert.alert(
-            'Erro de Comunicação', 
-            'Não foi possível carregar os dados do seu perfil.'
-          );
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserProfile();
-  }, []);
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={[styles.container, { justifyContent: 'center' }]}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
+    <ResponsiveContainer>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.userInfoSection}>
           <Image 
             source={{ uri: `https://picsum.photos/seed/${userProfile?.id || 'default'}/200` }} 
             style={styles.avatar}
           />
-          <Text style={styles.userName}>{userProfile?.name || 'Nome do Utilizador'}</Text>
+          <Text style={styles.userName}>{userProfile?.name || 'Nome do Usuário'}</Text>
           <Text style={styles.userEmail}>{userProfile?.email || 'email@exemplo.com'}</Text>
         </View>
 
@@ -91,81 +85,225 @@ export default function ProfileScreen() {
           {menuOptions.map((option) => (
             <TouchableOpacity key={option.id} style={styles.menuItem} onPress={option.action}>
               <View style={styles.menuItemContent}>
-                <Ionicons name={option.icon} size={24} color={COLORS.text} />
+                <View style={styles.menuIconContainer}>
+                  <Ionicons name={option.icon} size={24} color={COLORS.primary} />
+                </View>
                 <Text style={styles.menuItemLabel}>{option.label}</Text>
               </View>
-              <Ionicons name="chevron-forward-outline" size={22} color={COLORS.textSecondary} />
+              <Ionicons name="chevron-forward-outline" size={20} color={COLORS.textSecondary} />
             </TouchableOpacity>
           ))}
-
-          <TouchableOpacity style={styles.menuItem} onPress={logout}>
+          
+          <TouchableOpacity style={[styles.menuItem, styles.logoutItem]} onPress={onLogout}>
             <View style={styles.menuItemContent}>
-              <Ionicons name="log-out-outline" size={24} color={COLORS.error} />
+              <View style={styles.menuIconContainer}>
+                <Ionicons name="log-out-outline" size={24} color={COLORS.error} />
+              </View>
               <Text style={[styles.menuItemLabel, { color: COLORS.error }]}>Sair</Text>
             </View>
-            <Ionicons name="chevron-forward-outline" size={22} color={COLORS.error} />
+            <Ionicons name="chevron-forward-outline" size={20} color={COLORS.error} />
           </TouchableOpacity>
         </View>
       </ScrollView>
+    </ResponsiveContainer>
+  );
+};
+
+export default function ProfileScreen() {
+  const { logout, session, isAuthenticated } = useAuth();
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(false); // ✅ Inicia como false
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      // ✅ Só carrega perfil se estiver autenticado
+      if (!isAuthenticated || !session.userId) {
+        setLoading(false);
+        setUserProfile(null);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        let profileData: UserProfile;
+        
+        if (session.role === 'client' || session.role === 'patient' || session.role === 'admin') {
+          const patientData = await getClientProfileByUserId(session.userId);
+          console.log("DADOS RECEBIDOS DA API", JSON.stringify(patientData, null, 2));
+          
+          profileData = {
+            id: patientData.id,
+            userId: patientData.userId,
+            name: patientData.name,
+            email: patientData.email,
+            phone: patientData.phone,
+            cpf: patientData.cpf,
+            birthDate: (patientData.birthDate || '').toString(),
+            sex: patientData.sex,
+          };
+        } else if (session.role === 'doctor') {
+          const doctorData = await getDoctorByIdDetail(session.userId);
+          profileData = {
+            id: doctorData.id,
+            name: doctorData.name,
+            email: doctorData.email,
+            phone: doctorData.phone,
+            cpf: doctorData.cpf,
+            birthDate: doctorData.birthDate,
+          };
+        } else {
+          throw new Error(`Role de usuário desconhecido: ${session.role}`);
+        }
+        
+        setUserProfile(profileData);
+      } catch (error: any) {
+        console.error("Erro ao buscar perfil:", error);
+        
+        // ✅ Se erro 401, significa token inválido - mostrar tela de guest
+        if (error.response?.status === 401) {
+          console.log('[Profile] Token inválido, mostrando tela de guest');
+          setUserProfile(null);
+        } else {
+          Alert.alert('Erro', 'Não foi possível carregar os seus dados.');
+          setUserProfile(null);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [isAuthenticated, session.userId, session.role]);
+
+  // ✅ Loading apenas quando realmente carregando dados de usuário autenticado
+  if (loading && isAuthenticated) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <ResponsiveContainer centered>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>Carregando perfil...</Text>
+        </ResponsiveContainer>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      {/* ✅ Lógica simplificada: se não autenticado OU não tem perfil, mostra Guest */}
+      {!isAuthenticated || !userProfile ? (
+        <GuestProfileView />
+      ) : (
+        <UserProfileView userProfile={userProfile} onLogout={logout} />
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.background,
+  safeArea: { 
+    flex: 1, 
+    backgroundColor: COLORS.background 
   },
-  container: {
-    flexGrow: 1,
-    paddingVertical: 20,
-    paddingHorizontal: 20,
+  scrollContainer: { 
+    flexGrow: 1, 
+    paddingVertical: SIZES.large 
   },
-  userInfoSection: {
-    alignItems: 'center',
-    marginBottom: 40,
+  guestContainer: { 
+    alignItems: 'center', 
+    paddingHorizontal: SIZES.large 
   },
-  avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    marginBottom: 16,
-    borderWidth: 3,
-    borderColor: COLORS.primary,
+  guestTitle: { 
+    fontSize: SIZES.xLarge, 
+    fontWeight: 'bold', 
+    color: COLORS.text, 
+    marginBottom: SIZES.small,
+    marginTop: SIZES.large,
+    textAlign: 'center',
   },
-  userName: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: COLORS.text,
+  guestSubtitle: { 
+    fontSize: SIZES.medium, 
+    color: COLORS.textSecondary, 
+    textAlign: 'center', 
+    lineHeight: SIZES.large,
+    marginBottom: SIZES.xLarge,
   },
-  userEmail: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
-    marginTop: 4,
-  },
-  menuSection: {
+  guestButtonsContainer: {
     width: '100%',
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: COLORS.white,
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  menuItemContent: {
-    flexDirection: 'row',
     alignItems: 'center',
   },
-  menuItemLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginLeft: 16,
+  guestButton: {
+    marginBottom: SIZES.medium,
+  },
+  loadingText: {
+    fontSize: SIZES.medium,
+    color: COLORS.textSecondary,
+    marginTop: SIZES.medium,
+    textAlign: 'center',
+  },
+  userInfoSection: { 
+    alignItems: 'center', 
+    marginBottom: SIZES.xLarge,
+    paddingHorizontal: SIZES.containerPadding,
+  },
+  avatar: { 
+    width: SIZES.width * 0.3, 
+    height: SIZES.width * 0.3, 
+    borderRadius: SIZES.width * 0.15, 
+    marginBottom: SIZES.medium, 
+    borderWidth: 3, 
+    borderColor: COLORS.primary 
+  },
+  userName: { 
+    fontSize: SIZES.large, 
+    fontWeight: 'bold', 
     color: COLORS.text,
+    textAlign: 'center',
+    marginBottom: SIZES.tiny,
+  },
+  userEmail: { 
+    fontSize: SIZES.medium, 
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+  },
+  menuSection: { 
+    paddingHorizontal: SIZES.containerPadding,
+  },
+  menuItem: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    backgroundColor: COLORS.white, 
+    padding: SIZES.large, 
+    borderRadius: SIZES.radius * 1.5, 
+    marginBottom: SIZES.medium, 
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  menuItemContent: { 
+    flexDirection: 'row', 
+    alignItems: 'center',
+    flex: 1,
+  },
+  menuIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SIZES.medium,
+  },
+  menuItemLabel: { 
+    fontSize: SIZES.medium, 
+    fontWeight: '500',
+    color: COLORS.text,
+    flex: 1,
+  },
+  logoutItem: {
+    borderColor: COLORS.error,
+    borderWidth: 1,
   },
 });
-
