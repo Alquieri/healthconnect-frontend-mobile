@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { useAuth } from '../../src/context/AuthContext';
 import { COLORS, SIZES } from '../../src/constants/theme';
-import { HEADER_CONSTANTS } from '../../src/constants/layout'; // ✅ Fixed import
+import { HEADER_CONSTANTS } from '../../src/constants/layout';
 import { getAppointmentsByPatientId, updateAppointment } from '../../src/api/services/appointment';
 import { AppointmentDto } from '../../src/api/models/appointment';
 
@@ -30,10 +30,12 @@ interface AppointmentDisplay extends AppointmentDto.AppointmentDetails {
 }
 
 // --- COMPONENTES ---
-const StatusBadge: React.FC<{ status: Appointment['status'] }> = ({ status }) => {
-  const getStatusConfig = (status: Appointment['status']) => {
-    switch(status) {
+// ✅ Corrigir tipo do StatusBadge
+const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
+  const getStatusConfig = (status: string) => {
+    switch(status.toLowerCase()) {
       case 'scheduled':
+      case 'agendado':
         return { text: 'Agendado', color: COLORS.primary, bgColor: COLORS.primary + '20' };
       case 'confirmed':
         return { text: 'Confirmado', color: '#2196F3', bgColor: '#2196F320' };
@@ -84,7 +86,7 @@ export default function MySchedulingScreen() {
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'>('upcoming');
 
   // ✅ Função para determinar status e cor baseado na resposta da API
-  const processAppointmentStatus = (appointment: any, appointmentDate: Date, now: Date) => {
+  const processAppointmentStatus = (appointment: AppointmentDto.AppointmentDetails, appointmentDate: Date, now: Date) => {
     const status = appointment.status?.toLowerCase() || '';
     let statusColor = COLORS.textSecondary;
     let statusText = 'Desconhecido';
@@ -243,6 +245,7 @@ export default function MySchedulingScreen() {
         text1: 'Erro ao carregar agendamentos',
         text2: errorMessage
       });
+      
     } finally {
       setLoading(false);
       setRefreshing(false);

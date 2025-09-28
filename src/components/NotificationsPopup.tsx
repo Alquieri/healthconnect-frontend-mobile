@@ -26,13 +26,20 @@ export function NotificationsPopup({ visible, onClose, notifications }: Notifica
   const handleNotificationPress = (item: Notification) => {
     onClose();
     if (item.link) {
-      router.push(item.link as `http${string}` | `/${string}`);
+      // ✅ Tratar links especiais
+      if (item.link === '/doctor-portal' || item.link === '/registerDoctor') {
+        router.push('/registerDoctor');
+      } else if (item.link.startsWith('/')) {
+        router.push(item.link as `/${string}`);
+      } else if (item.link.startsWith('http')) {
+        router.push(item.link as `http${string}`);
+      }
     }
   };
 
   const NotificationItem = ({ item }: { item: Notification }) => {
     const isDoctorNotification = item.type === 'doctor';
-    const accentColor = isDoctorNotification ? '#27ae60' : COLORS.primary;
+    const accentColor = isDoctorNotification ? '#00A651' : COLORS.primary; // ✅ Verde médico
 
     return (
       <TouchableOpacity 
@@ -48,7 +55,17 @@ export function NotificationsPopup({ visible, onClose, notifications }: Notifica
             <Text style={styles.itemMessage}>{item.message}</Text>
             <Text style={styles.itemTime}>{item.time}</Text>
           </View>
-          {item.link && <Ionicons name="chevron-forward" size={24} color={COLORS.textSecondary} />}
+          
+          {!item.read && <View style={styles.unreadIndicator} />}
+          
+          {item.link && (
+            <Ionicons 
+              name="chevron-forward" 
+              size={16} 
+              color={COLORS.textSecondary} 
+              style={styles.chevron} 
+            />
+          )}
         </View>
       </TouchableOpacity>
     );
@@ -56,31 +73,29 @@ export function NotificationsPopup({ visible, onClose, notifications }: Notifica
 
   return (
     <Modal
-      animationType="slide"
+      animationType="fade"
       transparent={true}
       visible={visible}
       onRequestClose={onClose}
     >
-      <TouchableOpacity style={styles.centeredView} activeOpacity={1} onPressOut={onClose}>
+      <View style={styles.centeredView}>
         <View style={styles.modalView}>
           <View style={styles.header}>
-            <View style={styles.headerTitleContainer}>
-              <Ionicons name="notifications" size={22} color={COLORS.primary} />
-              <Text style={styles.modalTitle}>Notificações</Text>
-            </View>
+            <Text style={styles.headerTitle}>Notificações</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons name="close" size={20} color={COLORS.text} />
+              <Ionicons name="close" size={24} color={COLORS.textSecondary} />
             </TouchableOpacity>
           </View>
+          
           <FlatList
             data={notifications}
             renderItem={({ item }) => <NotificationItem item={item} />}
-            keyExtractor={item => item.id}
+            keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
-            ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+            style={styles.notificationsList}
           />
         </View>
-      </TouchableOpacity>
+      </View>
     </Modal>
   );
 }
@@ -99,68 +114,84 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderRadius: 20,
     padding: 20,
+    elevation: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
-  headerTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 22,
+  headerTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: COLORS.text,
-    marginLeft: 8,
   },
   closeButton: {
-    backgroundColor: COLORS.border,
-    padding: 6,
-    borderRadius: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 4,
+  },
+  notificationsList: {
+    maxHeight: 400,
   },
   itemTouchable: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: COLORS.white,
+    marginBottom: 8,
   },
   itemContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 12,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    position: 'relative',
   },
   accentBorder: {
-    width: 6,
-    height: '100%',
+    width: 4,
+    borderRadius: 2,
+    marginRight: 12,
   },
   itemContent: {
     flex: 1,
-    padding: 16,
+    paddingRight: 8,
   },
   itemTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '600',
     color: COLORS.text,
+    marginBottom: 4,
   },
   itemMessage: {
-    fontSize: 14,
+    fontSize: 13,
     color: COLORS.textSecondary,
-    marginTop: 4,
-    lineHeight: 20,
+    lineHeight: 18,
+    marginBottom: 6,
   },
   itemTime: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    marginTop: 8,
-    textAlign: 'right',
+    fontSize: 11,
+    color: COLORS.placeholder,
+  },
+  unreadIndicator: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.primary,
+  },
+  chevron: {
+    alignSelf: 'center',
+    marginLeft: 4,
   },
 });
 
