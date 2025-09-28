@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, SafeAreaView, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useAuth } from '../../src/context/AuthContext';
 import { useRouter, Link } from 'expo-router';
 import { CustomInput } from '../../src/components/CustomInput';
 import { CustomButton } from '../../src/components/CustomButton';
-import { COLORS } from '../../src/constants/theme';
+import { ResponsiveContainer } from '../../src/components/ResponsiveContainer';
+import { COLORS, SIZES } from '../../src/constants/theme';
 
 export default function LoginScreen() {
     const [email, setEmail] = useState('');
@@ -28,44 +29,75 @@ export default function LoginScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
-                <Text style={styles.title}>Entrar</Text>
-                <Text style={styles.subtitle}>Bem-vindo de volta!</Text>
+            <KeyboardAvoidingView 
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.keyboardView}
+            >
+                <ScrollView 
+                    contentContainerStyle={styles.scrollContainer}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    <View style={styles.content}>
+                        <View style={styles.headerContainer}>
+                            <Text style={styles.title}>Entrar</Text>
+                            <Text style={styles.subtitle}>Bem-vindo de volta!</Text>
+                        </View>
 
-                <CustomInput
-                    placeholder="Informe seu e-mail"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    value={email}
-                    onChangeText={setEmail}
-                />
-                <CustomInput
-                    placeholder="Senha"
-                    secureTextEntry
-                    value={password}
-                    onChangeText={setPassword}
-                />
-                <TouchableOpacity style={styles.forgotPasswordContainer}>
-                    <Text style={styles.forgotPasswordText}>Esqueci minha senha</Text>
-                </TouchableOpacity>
-                
-                <CustomButton title={loading ? 'Entrando...' : 'Entrar'} onPress={handleLogin} disabled={loading} />
+                        <View style={styles.formContainer}>
+                            <CustomInput
+                                placeholder="Informe seu e-mail"
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                value={email}
+                                onChangeText={setEmail}
+                                autoCorrect={false}
+                            />
+                            
+                            {/* ✅ Input de senha com toggle de visualização */}
+                            <CustomInput
+                                placeholder="Senha"
+                                secureTextEntry={true}
+                                showPasswordToggle={true} // ✅ Ativa o toggle de senha
+                                value={password}
+                                onChangeText={setPassword}
+                                autoCapitalize="none"
+                            />
+                            
+                            <View style={styles.forgotPasswordContainer}>
+                                <TouchableOpacity>
+                                    <Text style={styles.forgotPasswordText}>Esqueci minha senha</Text>
+                                </TouchableOpacity>
+                            </View>
+                            
+                            <CustomButton 
+                                title={loading ? 'Entrando...' : 'Entrar'} 
+                                onPress={handleLogin} 
+                                disabled={loading} 
+                            />
 
-                <Text style={styles.orText}>Continuar com</Text>
+                            <Text style={styles.orText}>Continuar com</Text>
 
-                <TouchableOpacity style={styles.googleButton}>
-                    <Text style={styles.googleButtonText}>Google</Text>
-                </TouchableOpacity>
-                
-                <View style={styles.registerRedirect}>
-                    <Text style={styles.registerRedirectText}>Não tem uma conta? </Text>
-                    <Link href="/register" asChild>
-                        <TouchableOpacity>
-                            <Text style={styles.registerLink}>Cadastre-se</Text>
-                        </TouchableOpacity>
-                    </Link>
-                </View>
-            </ScrollView>
+                            <CustomButton 
+                                title="Google" 
+                                variant="secondary"
+                                onPress={() => {}}
+                            />
+                        </View>
+
+                        <View style={styles.registerRedirectContainer}>
+                            <View style={styles.registerRedirect}>
+                                <Text style={styles.registerRedirectText}>Não tem uma conta? </Text>
+                                <Link href="/register" asChild>
+                                    <TouchableOpacity style={styles.registerLinkButton}>
+                                        <Text style={styles.registerLink}>Cadastre-se</Text>
+                                    </TouchableOpacity>
+                                </Link>
+                            </View>
+                        </View>
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 }
@@ -73,65 +105,82 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background, 
+        backgroundColor: COLORS.background,
+    },
+    keyboardView: {
+        flex: 1,
     },
     scrollContainer: {
         flexGrow: 1,
-        alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 20,
+        paddingVertical: SIZES.large,
+        paddingHorizontal: SIZES.containerPadding,
+    },
+    content: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: SIZES.height * 0.8,
+    },
+    headerContainer: {
+        alignItems: 'center',
+        marginBottom: SIZES.xLarge,
+        width: '100%',
     },
     title: {
-        fontSize: 32,
+        fontSize: SIZES.xxLarge,
         fontWeight: 'bold',
         color: COLORS.text,
-        marginBottom: 10,
+        marginBottom: SIZES.small,
+        textAlign: 'center',
     },
     subtitle: {
-        fontSize: 16,
+        fontSize: SIZES.medium,
         color: COLORS.textSecondary,
-        marginBottom: 40,
+        textAlign: 'center',
+    },
+    formContainer: {
+        alignItems: 'center',
+        marginBottom: SIZES.large,
+        width: '100%',
     },
     forgotPasswordContainer: {
-        width: '85%',
-        marginBottom: 20,
-        alignItems: 'flex-end', 
+        width: SIZES.inputWidth,
+        alignItems: 'flex-end',
+        marginBottom: SIZES.large,
+        alignSelf: 'center',
     },
     forgotPasswordText: {
         color: COLORS.primary,
-        fontSize: 14,
+        fontSize: SIZES.small,
+        fontWeight: '500',
+        textAlign: 'center',
     },
     orText: {
-        color: COLORS.textSecondary, 
-        marginTop: 30,
-        marginBottom: 15,
+        color: COLORS.textSecondary,
+        fontSize: SIZES.font,
+        marginVertical: SIZES.large,
+        textAlign: 'center',
     },
-    googleButton: {
-        width: '85%',
-        flexDirection: 'row',
+    registerRedirectContainer: {
         alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: COLORS.white,
-        padding: 15,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: COLORS.border, 
-    },
-    googleButtonText: {
-        color: COLORS.text, 
-        fontSize: 16,
-        fontWeight: '600',
+        paddingTop: SIZES.large,
+        width: '100%',
     },
     registerRedirect: {
         flexDirection: 'row',
-        marginTop: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     registerRedirectText: {
-        fontSize: 14,
+        fontSize: SIZES.font,
         color: COLORS.textSecondary,
     },
+    registerLinkButton: {
+        paddingVertical: SIZES.tiny,
+        paddingHorizontal: SIZES.tiny,
+    },
     registerLink: {
-        fontSize: 14,
+        fontSize: SIZES.font,
         color: COLORS.primary,
         fontWeight: 'bold',
     },

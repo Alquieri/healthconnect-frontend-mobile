@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, SafeAreaView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, SafeAreaView, Platform, KeyboardAvoidingView } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Checkbox from 'expo-checkbox';
@@ -7,7 +7,8 @@ import Toast from 'react-native-toast-message';
 import { registerPatient } from '../../src/api/services/user';
 import { CustomInput } from '../../src/components/CustomInput';
 import { CustomButton } from '../../src/components/CustomButton';
-import { COLORS } from '../../src/constants/theme';
+import { ResponsiveContainer } from '../../src/components/ResponsiveContainer';
+import { COLORS, SIZES } from '../../src/constants/theme';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -18,22 +19,20 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [cpf, setCpf] = useState('');
-  // const [cep, setCep] = useState(''); // <-- REMOVIDO
-  const [sex, setSex] = useState<'Masculino' | 'Feminino' | 'Outros' | null>(null);
+  const [sex, setSex] = useState<'Male' | 'Female' | null>(null);
   const [date, setDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    // Verificar se já está carregando
     if (loading) return;
     
     setLoading(true);
     
     try {
       // Validações de campos obrigatórios
-      if (!name || !email || !password || !cpf || !phone || !date) {
+      if (!name || !email || !password || !cpf || !phone || !date || !sex) {
         Toast.show({ 
           type: 'error',
           text1: 'Campos Incompletos',
@@ -111,6 +110,7 @@ export default function RegisterScreen() {
         phone: phoneCleaned,
         password,
         cpf: cpfCleaned,
+        sex: sex,
         birthDate: date.toISOString().slice(0, 10),
       };
 
@@ -174,146 +174,156 @@ export default function RegisterScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView 
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
       >
-        <View style={styles.headerContainer}>
-          <Text style={styles.title}>Crie sua conta</Text>
-          <Text style={styles.subtitle}>
-            Insira seus dados pessoais para realizar o cadastro
-          </Text>
-        </View>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <ResponsiveContainer>
+            <View style={styles.headerContainer}>
+              <Text style={styles.title}>Crie sua conta</Text>
+              <Text style={styles.subtitle}>
+                Insira seus dados pessoais para realizar o cadastro
+              </Text>
+            </View>
 
-        <View style={styles.formContainer}>
-          <CustomInput 
-            placeholder="Nome completo" 
-            value={name} 
-            onChangeText={setName}
-            autoCapitalize="words"
-            autoCorrect={false}
-          />
+            <View style={styles.formContainer}>
+              <CustomInput 
+                placeholder="Nome completo" 
+                value={name} 
+                onChangeText={setName}
+                autoCapitalize="words"
+                autoCorrect={false}
+              />
 
-          <CustomInput 
-            placeholder="E-mail" 
-            value={email} 
-            onChangeText={setEmail} 
-            keyboardType="email-address" 
-            autoCapitalize="none" 
-            autoCorrect={false}
-          />
+              <CustomInput 
+                placeholder="E-mail" 
+                value={email} 
+                onChangeText={setEmail} 
+                keyboardType="email-address" 
+                autoCapitalize="none" 
+                autoCorrect={false}
+              />
 
-          <CustomInput 
-            placeholder="Telefone" 
-            value={phone} 
-            onChangeText={formatPhone} 
-            keyboardType="phone-pad"
-            maxLength={15}
-          />
+              <CustomInput 
+                placeholder="Telefone" 
+                value={phone} 
+                onChangeText={formatPhone} 
+                keyboardType="phone-pad"
+                maxLength={15}
+              />
 
-          <CustomInput 
-            placeholder="CPF" 
-            value={cpf} 
-            onChangeText={formatCPF} 
-            keyboardType="numeric"
-            maxLength={14}
-          />
+              <CustomInput 
+                placeholder="CPF" 
+                value={cpf} 
+                onChangeText={formatCPF} 
+                keyboardType="numeric"
+                maxLength={14}
+              />
 
-          <CustomInput 
-            placeholder="Senha" 
-            value={password} 
-            onChangeText={setPassword} 
-            secureTextEntry 
-            autoCapitalize="none"
-          />
+              {/* ✅ Inputs de senha com toggle de visualização */}
+              <CustomInput 
+                placeholder="Senha" 
+                value={password} 
+                onChangeText={setPassword} 
+                secureTextEntry={true}
+                showPasswordToggle={true} // ✅ Ativa o toggle de senha
+                autoCapitalize="none"
+              />
 
-          <CustomInput 
-            placeholder="Confirme sua senha" 
-            value={confirmPassword} 
-            onChangeText={setConfirmPassword} 
-            secureTextEntry 
-            autoCapitalize="none"
-          />
+              <CustomInput 
+                placeholder="Confirme sua senha" 
+                value={confirmPassword} 
+                onChangeText={setConfirmPassword} 
+                secureTextEntry={true}
+                showPasswordToggle={true} // ✅ Ativa o toggle de senha
+                autoCapitalize="none"
+              />
 
-          {/* Futuro campo de sexo - comentado para uso futuro */}
-          {/* <View style={styles.sexSelectorContainer}>
-            <TouchableOpacity
-              style={[styles.sexOption, sex === 'Masculino' && styles.selectedSexOption]}
-              onPress={() => setSex('Masculino')}
-            >
-              <Text style={[styles.sexOptionText, sex === 'Masculino' && styles.selectedSexOptionText]}>Masculino</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.sexOption, sex === 'Feminino' && styles.selectedSexOption]}
-              onPress={() => setSex('Feminino')}
-            >
-              <Text style={[styles.sexOptionText, sex === 'Feminino' && styles.selectedSexOptionText]}>Feminino</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.sexOption, sex === 'Outros' && styles.selectedSexOption]}
-              onPress={() => setSex('Outros')}
-            >
-              <Text style={[styles.sexOptionText, sex === 'Outros' && styles.selectedSexOptionText]}>Outro</Text>
-            </TouchableOpacity>
-          </View> */}
+              {/* Campo de sexo */}
+              <View style={styles.sexSelectorContainer}>
+                <Text style={styles.sectionLabel}>Sexo</Text>
+                <View style={styles.sexOptionsRow}>
+                  <TouchableOpacity
+                    style={[styles.sexOption, sex === 'Male' && styles.selectedSexOption]}
+                    onPress={() => setSex('Male')}
+                  >
+                    <Text style={[styles.sexOptionText, sex === 'Male' && styles.selectedSexOptionText]}>
+                      Masculino
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.sexOption, sex === 'Female' && styles.selectedSexOption]}
+                    onPress={() => setSex('Female')}
+                  >
+                    <Text style={[styles.sexOptionText, sex === 'Female' && styles.selectedSexOptionText]}>
+                      Feminino
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
 
-          <TouchableOpacity 
-            onPress={toggleDatePicker} 
-            style={styles.dateInput}
-            activeOpacity={0.7}
-          >
-            <Text 
-              style={[styles.dateInputText, !date && styles.placeholderText]}
-            >
-              {date ? date.toLocaleDateString('pt-BR') : 'Data de nascimento'}
-            </Text>
-          </TouchableOpacity>
+              <View style={styles.dateContainer}>
+                <Text style={styles.sectionLabel}>Data de Nascimento</Text>
+                <TouchableOpacity 
+                  onPress={toggleDatePicker} 
+                  style={styles.dateInput}
+                  activeOpacity={0.7}
+                >
+                  <Text 
+                    style={[styles.dateInputText, !date && styles.placeholderText]}
+                  >
+                    {date ? date.toLocaleDateString('pt-BR') : 'Selecione sua data de nascimento'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
-          {showDatePicker && (
-            <DateTimePicker 
-              mode="date" 
-              display="spinner" 
-              value={date || new Date()} 
-              onChange={onChangeDate}
-              maximumDate={new Date()} // Não permitir datas futuras
-            />
-          )}
+              {showDatePicker && (
+                <DateTimePicker 
+                  mode="date" 
+                  display="spinner" 
+                  value={date || new Date()} 
+                  onChange={onChangeDate}
+                  maximumDate={new Date()}
+                />
+              )}
 
-          <View style={styles.checkboxContainer}>
-            <Checkbox
-              style={styles.checkbox}
-              value={termsAccepted}
-              onValueChange={setTermsAccepted}
-              color={termsAccepted ? COLORS.primary : undefined}
-            />
-            <Text style={styles.checkboxLabel}>
-              Eu li e autorizo a coleta e o uso dos meus dados conforme a Política de Privacidade.
-            </Text>
-          </View>
+              <View style={styles.checkboxContainer}>
+                <Checkbox
+                  style={styles.checkbox}
+                  value={termsAccepted}
+                  onValueChange={setTermsAccepted}
+                  color={termsAccepted ? COLORS.primary : undefined}
+                />
+                <Text style={styles.checkboxLabel}>
+                  Eu li e autorizo a coleta e o uso dos meus dados conforme a Política de Privacidade.
+                </Text>
+              </View>
 
-          <CustomButton
-            title={loading ? 'Cadastrando...' : 'Cadastrar'}
-            onPress={handleRegister}
-            disabled={!termsAccepted || loading}
-          />
-        </View>
+              <CustomButton
+                title={loading ? 'Cadastrando...' : 'Cadastrar'}
+                onPress={handleRegister}
+                disabled={!termsAccepted || loading}
+              />
+            </View>
 
-        {/* Container separado para o link de login com padding extra */}
-        <View style={styles.loginRedirectContainer}>
-          <View style={styles.loginRedirect}>
-            <Text style={styles.loginRedirectText}>Já tem uma conta? </Text>
-            <Link href="/login" asChild>
-              <TouchableOpacity 
-                style={styles.loginLinkButton}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.loginLink}>Entre aqui</Text>
-              </TouchableOpacity>
-            </Link>
-          </View>
-        </View>
-      </ScrollView>
+            <View style={styles.loginRedirectContainer}>
+              <View style={styles.loginRedirect}>
+                <Text style={styles.loginRedirectText}>Já tem uma conta? </Text>
+                <Link href="/login" asChild>
+                  <TouchableOpacity style={styles.loginLinkButton}>
+                    <Text style={styles.loginLink}>Entre aqui</Text>
+                  </TouchableOpacity>
+                </Link>
+              </View>
+            </View>
+          </ResponsiveContainer>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -323,119 +333,126 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background 
   },
+  keyboardView: {
+    flex: 1,
+  },
   scrollContainer: {
     flexGrow: 1,
-    paddingBottom: 40, // Padding extra para evitar sobreposição com botões do sistema
+    paddingVertical: SIZES.large,
   },
   headerContainer: {
     alignItems: 'center',
-    paddingTop: 40,
-    paddingBottom: 20,
-    paddingHorizontal: 30,
+    marginBottom: SIZES.xLarge,
   },
   title: { 
-    fontSize: 32, 
+    fontSize: SIZES.xxLarge, 
     fontWeight: 'bold', 
     color: COLORS.text, 
-    marginBottom: 10,
+    marginBottom: SIZES.small,
     textAlign: 'center',
   },
   subtitle: { 
-    fontSize: 16, 
+    fontSize: SIZES.medium, 
     color: COLORS.textSecondary, 
     textAlign: 'center', 
-    lineHeight: 22,
+    lineHeight: SIZES.large,
   },
   formContainer: {
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    marginBottom: SIZES.large,
   },
-  dateInput: {
-    width: '85%', 
-    backgroundColor: COLORS.white, 
-    paddingHorizontal: 15, 
-    paddingVertical: 15, 
-    borderRadius: 8,
-    marginBottom: 15, 
+  sectionLabel: {
+    fontSize: SIZES.font,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: SIZES.small,
+    alignSelf: 'flex-start',
+  },
+  sexSelectorContainer: {
+    width: SIZES.inputWidth,
+    marginBottom: SIZES.medium,
+  },
+  sexOptionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  sexOption: { 
+    flex: 1, 
+    paddingVertical: SIZES.medium, 
+    paddingHorizontal: SIZES.small,
+    borderRadius: SIZES.radius, 
     borderWidth: 1, 
     borderColor: COLORS.border, 
+    alignItems: 'center',
+    marginHorizontal: SIZES.tiny,
+    backgroundColor: COLORS.white,
+  },
+  selectedSexOption: { 
+    borderColor: COLORS.primary, 
+    backgroundColor: COLORS.primary + '10',
+  },
+  sexOptionText: { 
+    fontSize: SIZES.font, 
+    color: COLORS.text 
+  },
+  selectedSexOptionText: { 
+    color: COLORS.primary, 
+    fontWeight: '600',
+  },
+  dateContainer: {
+    width: SIZES.inputWidth,
+    marginBottom: SIZES.medium,
+  },
+  dateInput: {
+    backgroundColor: COLORS.white,
+    paddingHorizontal: SIZES.padding,
+    paddingVertical: SIZES.medium,
+    borderRadius: SIZES.radius,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     justifyContent: 'center',
   },
-  dateInputText: { 
-    fontSize: 16,
+  dateInputText: {
+    fontSize: SIZES.font,
     color: COLORS.text 
   },
   placeholderText: {
     color: COLORS.placeholder,
   },
-  // Estilos para futuro uso (sexo)
-  sexSelectorContainer: {
-    width: '85%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 15
-  },
-  sexOption: { 
-    flex: 1, 
-    padding: 15, 
-    alignItems: 'center', 
-    backgroundColor: COLORS.white, 
-    borderWidth: 1, 
-    borderColor: COLORS.border, 
-    borderRadius: 8, 
-    marginHorizontal: 4 
-  },
-  selectedSexOption: { 
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary 
-  },
-  sexOptionText: { 
-    fontSize: 16, 
-    color: COLORS.text 
-  },
-  selectedSexOptionText: { 
-    color: COLORS.white, 
-    fontWeight: 'bold' 
-  },
   checkboxContainer: {
     flexDirection: 'row',
-    width: '85%',
-    marginVertical: 20,
-    alignItems: 'flex-start', // Mudado para flex-start para melhor alinhamento
-    paddingHorizontal: 5,
+    width: SIZES.inputWidth,
+    marginVertical: SIZES.large,
+    alignItems: 'flex-start',
   },
   checkbox: {
-    marginRight: 12,
-    marginTop: 2, // Pequeno ajuste para alinhar com o texto
+    marginRight: SIZES.small,
+    marginTop: SIZES.tiny,
   },
   checkboxLabel: {
     flex: 1,
-    fontSize: 14,
+    fontSize: SIZES.small,
     color: COLORS.textSecondary,
-    lineHeight: 20,
+    lineHeight: SIZES.medium,
   },
   loginRedirectContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 30, // Padding generoso para evitar sobreposição
-    paddingBottom: 50, // Padding extra na parte inferior
     alignItems: 'center',
+    paddingTop: SIZES.large,
   },
   loginRedirect: { 
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
   },
   loginRedirectText: { 
-    fontSize: 14, 
+    fontSize: SIZES.font, 
     color: COLORS.textSecondary 
   },
   loginLinkButton: {
-    paddingVertical: 8, // Área de toque maior
-    paddingHorizontal: 4,
+    paddingVertical: SIZES.tiny,
+    paddingHorizontal: SIZES.tiny,
   },
   loginLink: { 
-    fontSize: 14, 
+    fontSize: SIZES.font, 
     color: COLORS.primary, 
     fontWeight: 'bold' 
   },
