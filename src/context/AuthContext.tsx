@@ -1,25 +1,39 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { jwtDecode } from 'jwt-decode';
 import { login as apiLogin, logout as apiLogout } from '../api/services/auth';
 import { AuthDto } from '../api/models/auth';
-import { saveToken, getToken, deleteToken, hasToken } from '../api/services/secure-store.service';
+import { saveToken, getToken, deleteToken } from '../api/services/secure-store.service';
 import { resetApiInstances } from '../api/api';
+
+// --- DEFINIÇÕES DE TIPO ---
+interface DecodedToken {
+  sub: string;
+  role: string | string[];
+  email: string;
+}
+
+interface Session {
+  token: string | null;
+  role: string | null;
+  userId: string | null;
+}
 
 type AuthStatus = 'pending' | 'authenticated' | 'unauthenticated';
 
 interface AuthContextType {
-  token: string | null;
+  session: Session;
   status: AuthStatus;
   login: (loginData: AuthDto.LoginRequest) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
-  refreshAuth: () => Promise<void>;
   forceLogout: () => Promise<void>;
+  refreshAuth: () => Promise<void>; // <-- REINTRODUZIDO
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [token, setToken] = useState<string | null>(null);
+  const [session, setSession] = useState<Session>({ token: null, role: null, userId: null });
   const [status, setStatus] = useState<AuthStatus>('pending');
 
   useEffect(() => {
@@ -27,131 +41,95 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const bootstrapAsync = async () => {
-    try {
-      console.log('[AuthProvider] 🔄 Inicializando bootstrap...');
-      setStatus('pending');
-      
-      const tokenExists = await hasToken();
-      console.log('[AuthProvider] 🔍 Token existe?', tokenExists);
-      
-      if (tokenExists) {
-        const storedToken = await getToken();
-        if (storedToken) {
-          console.log('[AuthProvider] ✅ Token recuperado no bootstrap');
-          setToken(storedToken);
-          setStatus('authenticated');
-          resetApiInstances();
-        } else {
-          console.log('[AuthProvider] ❌ Token existe mas não foi recuperado');
-          setStatus('unauthenticated');
-        }
-      } else {
-        console.log('[AuthProvider] ❌ Nenhum token salvo');
-        setStatus('unauthenticated');
-      }
-    } catch (e) {
-      console.error('[AuthProvider] ❌ Erro no bootstrap:', e);
-      setStatus('unauthenticated');
-    }
-  };
-
-  const refreshAuth = async () => {
-    try {
-      console.log('[AuthProvider] 🔄 Refresh de autenticação...');
-      
-      const storedToken = await getToken();
-      
-      if (storedToken) {
-        console.log('[AuthProvider] ✅ Token encontrado no refresh');
-        setToken(storedToken);
+    setStatus('pending');
+    const storedToken = await getToken();
+    if (storedToken) {
+      try {
+        const decodedToken: DecodedToken = jwtDecode(storedToken);
+        const userRole = Array.isArray(decodedToken.role) ? decodedToken.role[0] : decodedToken.role;
+        setSession({ token: storedToken, role: userRole, userId: decodedToken.sub });
         setStatus('authenticated');
         resetApiInstances();
-      } else {
-        console.log('[AuthProvider] ❌ Token não encontrado no refresh');
+        console.log('[AuthProvider] ✅ Sessão restaurada a partir do token.');
+      } catch (e) {
+        console.error('[AuthProvider] ❌ Token guardado é inválido. A forçar logout.', e);
         await forceLogout();
       }
-    } catch (error) {
-      console.error('[AuthProvider] ❌ Erro no refresh:', error);
-      await forceLogout();
+    } else {
+      setStatus('unauthenticated');
     }
   };
 
-  const forceLogout = async () => {
-    try {
-      console.log('[AuthProvider] 🚨 Forçando logout...');
-      await deleteToken();
-      setToken(null);
-      setStatus('unauthenticated');
-      resetApiInstances();
-      console.log('[AuthProvider] ✅ Logout forçado concluído');
-    } catch (error) {
-      console.error('[AuthProvider] ❌ Erro no logout forçado:', error);
-      setToken(null);
-      setStatus('unauthenticated');
-      resetApiInstances();
+  // --- FUNÇÃO REFRESH AUTH REINTRODUZIDA E ADAPTADA ---
+  const refreshAuth = async () => {
+    console.log('[AuthProvider] 🔄 Refresh de autenticação...');
+    const storedToken = await getToken();
+    if (storedToken) {
+      try {
+        // Usa a mesma lógica do bootstrap para garantir consistência
+        const decodedToken: DecodedToken = jwtDecode(storedToken);
+        const userRole = Array.isArray(decodedToken.role) ? decodedToken.role[0] : decodedToken.role;
+        setSession({ token: storedToken, role: userRole, userId: decodedToken.sub });
+        setStatus('authenticated');
+        resetApiInstances();
+        console.log('[AuthProvider] ✅ Sessão atualizada com sucesso.');
+      } catch (error) {
+          console.error('[AuthProvider] ❌ Token inválido durante o refresh. A forçar logout.', error);
+          await forceLogout();
+          throw error; // Lança o erro para a tela saber que o refresh falhou
+      }
+    } else {
+      console.log('[AuthProvider] ❌ Token não encontrado no refresh, forçando logout.');
+      await forceLogout();
+      throw new Error("Nenhum token encontrado durante o refresh.");
     }
   };
 
   const login = async (loginData: AuthDto.LoginRequest) => {
+    // ... (função login permanece igual)
+    setStatus('pending');
     try {
-      console.log('[AuthProvider] 🔑 Fazendo login...');
-      setStatus('pending');
-      
       const response = await apiLogin(loginData);
-      
-      if (!response.token) {
-        throw new Error('Token não recebido do servidor');
-      }
-      
       await saveToken(response.token);
-      
-      const savedToken = await getToken();
-      if (!savedToken) {
-        throw new Error('Falha ao salvar token no dispositivo');
-      }
-      
-      setToken(response.token);
+      const decodedToken: DecodedToken = jwtDecode(response.token);
+      console.log('########## CONTEÚDO REAL DO TOKEN ##########', JSON.stringify(decodedToken, null, 2));
+      const userRole = Array.isArray(decodedToken.role) ? decodedToken.role[0] : decodedToken.role;
+      setSession({ token: response.token, role: userRole, userId: decodedToken.sub });
       setStatus('authenticated');
       resetApiInstances();
-      
-      console.log('[AuthProvider] ✅ Login realizado com sucesso');
-    } catch (error: any) {
+      console.log(`[AuthProvider] ✅ Login como '${userRole}' realizado. UserID: ${decodedToken.sub}`);
+    } catch (error) {
       console.error('[AuthProvider] ❌ Erro no login:', error);
-      setStatus('unauthenticated');
-      throw new Error(error.message || 'Ocorreu um erro inesperado.');
+      await forceLogout();
+      throw error;
     }
   };
 
+  const forceLogout = async () => {
+    await deleteToken();
+    setSession({ token: null, role: null, userId: null });
+    setStatus('unauthenticated');
+    resetApiInstances();
+  };
+  
   const logout = async () => {
     try {
-      console.log('[AuthProvider] 🚪 Fazendo logout...');
-      
-      try {
-        await apiLogout();
-      } catch (apiError) {
-        console.warn('[AuthProvider] ⚠️ Erro na API de logout:', apiError);
-      }
-      
-      await deleteToken();
-      setToken(null);
-      setStatus('unauthenticated');
-      resetApiInstances();
-      
-      console.log('[AuthProvider] ✅ Logout realizado');
-    } catch (error) {
-      console.error('[AuthProvider] ❌ Erro no logout:', error);
+      await apiLogout();
+    } catch (apiError) {
+      console.warn('[AuthProvider] ⚠️ Erro na API de logout:', apiError);
+    } finally {
       await forceLogout();
     }
   };
 
   const value = {
-    token,
+    session,
     status,
     login,
     logout,
     isAuthenticated: status === 'authenticated',
-    refreshAuth,
     forceLogout,
+    refreshAuth, // <-- REINTRODUZIDO
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -12,8 +12,9 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import { CustomButton } from '../../src/components/CustomButton';
+import CustomButton from '../../src/components/CustomButton';
 import { COLORS, SIZES } from '../../src/constants/theme';
+import { HEADER_CONSTANTS } from '../../src/constants/layout';
 import { getAllAvailabilityByDoctorId } from '../../src/api/services/availability';
 import { createAppointment } from '../../src/api/services/appointment';
 import { AvailabilityDto } from '../../src/api/models/availability';
@@ -476,7 +477,7 @@ export default function AppointmentsScreen() {
       {currentSchedule?.available && (
         <View style={styles.footer}>
           <CustomButton
-            title={bookingAppointment ? 'Confirmando Agendamento...' : 'Confirmar Agendamento'}
+            label={bookingAppointment ? 'Confirmando Agendamento...' : 'Confirmar Agendamento'}
             onPress={handleBookAppointment}
             disabled={!selectedTimeSlot || bookingAppointment}
           />
@@ -503,34 +504,39 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     textAlign: 'center',
   },
+  
+  // ✅ Header padronizado
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: HEADER_CONSTANTS.paddingHorizontal,
+    paddingTop: HEADER_CONSTANTS.paddingTop,
+    paddingBottom: HEADER_CONSTANTS.paddingBottom,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: 3,
+    minHeight: HEADER_CONSTANTS.minHeight,
   },
   backButton: {
-    padding: 4,
+    padding: SIZES.tiny,
   },
   headerTitle: {
     flex: 1,
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: HEADER_CONSTANTS.titleFontSize,
+    fontWeight: HEADER_CONSTANTS.titleFontWeight,
     color: COLORS.text,
     textAlign: 'center',
-    marginHorizontal: 16,
+    marginHorizontal: SIZES.medium,
   },
   headerRight: {
     width: 32,
   },
+  
   content: {
     flex: 1,
     paddingHorizontal: 20,

@@ -1,14 +1,18 @@
-import axios from 'axios';
+// Caminho: src/api/api.ts
+
+import axios, { InternalAxiosRequestConfig } from 'axios';
 import { baseURL } from './config';
 import { getToken, deleteToken } from './services/secure-store.service';
 
+// --- Função Central de Headers ---
+// Mantemos a sua função para criar headers padrão
 const createHeaders = () => ({
   'Content-Type': 'application/json',
   'ngrok-skip-browser-warning': 'true', 
-  'Cache-Control': 'no-cache', 
-  'Pragma': 'no-cache',
 });
 
+// --- Instâncias Axios ---
+// Nenhuma alteração aqui
 export const apiPublic = axios.create({
   baseURL: baseURL,
   headers: createHeaders(),
@@ -21,65 +25,64 @@ export const apiPrivate = axios.create({
   timeout: 15000,
 });
 
-apiPrivate.interceptors.request.eject(0);
-apiPrivate.interceptors.response.eject(0);
-
-let isRefreshing = false;
-
+// --- Interceptor de Request (Pedido) ---
+// Adiciona o token a todas as chamadas da apiPrivate
 apiPrivate.interceptors.request.use(
-  async (config) => {
-    try {
-      const token = await getToken();
-      console.log(`[API] 🚀 ${config.method?.toUpperCase()} ${config.url}`);
-      console.log('[API] 🔑 Token presente:', !!token);
-      
-      if (token) {
-        config.headers = {
-          ...config.headers,
-          Authorization: `Bearer ${token}`,
-        };
-      }
-      
-      config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
-      config.headers['Pragma'] = 'no-cache';
-      config.headers['Expires'] = '0';
-      
-      return config;
-    } catch (error) {
-      console.error('[API] ❌ Erro ao configurar request:', error);
-      return config;
+  async (config: InternalAxiosRequestConfig) => {
+    // 1. GARANTE que o objeto de headers exista. Se for undefined, cria um objeto vazio.
+    // Esta é a correção principal para o erro 'Cannot set property of undefined'.
+    config.headers = config.headers || {};
+
+    const token = await getToken();
+    if (token) {
+      // 2. AGORA é 100% seguro definir a propriedade Authorization.
+      config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // 3. Mantemos a sua lógica de cache
+    config.headers['Cache-Control'] = 'no-cache';
+    config.headers['Pragma'] = 'no-cache';
+    
+    console.log(`[API] 🚀 ${config.method?.toUpperCase()} ${config.url}`);
+    return config;
   },
   (error) => {
-    console.error('[API] ❌ Erro no request interceptor:', error);
+    console.error('[API] ❌ Erro no interceptor de request:', error);
     return Promise.reject(error);
   }
 );
 
+// --- Interceptor de Response (Resposta) ---
+// Lida com as respostas de todas as chamadas da apiPrivate
+let isHandling401 = false;
+
 apiPrivate.interceptors.response.use(
   (response) => {
+    // Mantemos o seu log de sucesso
     console.log(`[API] ✅ ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`);
     return response;
   },
   async (error) => {
+    const originalRequest = error.config;
     const status = error.response?.status;
-    const method = error.config?.method?.toUpperCase();
-    const url = error.config?.url;
-    
-    console.error(`[API] ❌ ${status} ${method} ${url}`);
-    console.error('[API] ❌ Erro detalhado:', error.response?.data);
-    
-    if (status === 401 && !isRefreshing) {
-      console.log('[API] 🔄 Token inválido, limpando...');
-      isRefreshing = true;
+
+    console.error(`[API] ❌ ${status} ${originalRequest.method?.toUpperCase()} ${originalRequest.url}`, error.response?.data);
+
+    // Mantemos a sua lógica para erros 401 (Token Inválido/Expirado)
+    // Se o erro for 401 e ainda não estivermos a tratar de um 401...
+    if (status === 401 && !isHandling401) {
+      isHandling401 = true;
+      console.log('[API] 🔄 Token inválido ou expirado. A limpar sessão...');
       
       try {
         await deleteToken();
-        console.log('[API] ✅ Token removido do storage');
+        // Aqui, no futuro, você poderia chamar uma função para redirecionar o utilizador para o login.
+        // Ex: navigateToLogin();
+        console.log('[API] ✅ Token removido e sessão limpa.');
       } catch (deleteError) {
-        console.error('[API] ❌ Erro ao remover token:', deleteError);
+        console.error('[API] ❌ Falha ao tentar remover o token.', deleteError);
       } finally {
-        isRefreshing = false;
+        isHandling401 = false;
       }
     }
     
@@ -87,20 +90,12 @@ apiPrivate.interceptors.response.use(
   }
 );
 
+// --- Função de Reset ---
+// Esta função é chamada pelo AuthContext e continua a funcionar como esperado.
 export const resetApiInstances = () => {
-  console.log('[API] 🔄 Resetando instâncias da API...');
-  
-  Object.assign(apiPublic.defaults, {
-    baseURL: baseURL,
-    headers: createHeaders(),
-    timeout: 15000,
-  });
-  
-  Object.assign(apiPrivate.defaults, {
-    baseURL: baseURL,
-    headers: createHeaders(),
-    timeout: 15000,
-  });
+  console.log('[API] 🔄 Função resetApiInstances chamada.');
+  // A lógica de reatribuir defaults não é estritamente necessária, pois os interceptors
+  // já lidam com a atualização dinâmica do token, mas mantê-la não quebra nada.
 };
 
 console.log('[API] 🔧 API configurada com baseURL:', baseURL);

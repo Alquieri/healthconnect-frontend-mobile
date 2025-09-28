@@ -5,15 +5,17 @@ export namespace UserDto {
         email: string;
         phone: string;
         password: string;
+        sex:string;
         cpf: string;
         birthDate: string;
     }
+    
     export interface RegisterResponse {
         id: string;
         name: string;
         email: string;
         phone: string;
-        password: string;
+        // Removi 'password' da resposta, pois geralmente não é retornado
         cpf: string;
         birthDate: string;
     }
