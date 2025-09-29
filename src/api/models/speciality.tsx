@@ -14,4 +14,12 @@ export namespace SpecialityDto {
         description?: string;
         isActive: boolean;
     }
+    export interface SpecialitySummary {
+        specialityName: string;
+        rqeNumber: number;
+    }
+
+    export interface Specialities { 
+        specialities: SpecialitySummary[];
+    }
 }
