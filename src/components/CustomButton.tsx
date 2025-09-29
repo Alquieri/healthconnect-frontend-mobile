@@ -1,135 +1,175 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, TouchableOpacityProps } from 'react-native';
-import { COLORS, SIZES, createResponsiveStyle } from '../constants/theme';
+import { getTheme, SIZES, createResponsiveStyle } from '../constants/theme';
 
 interface CustomButtonProps extends TouchableOpacityProps {
   title: string;
   variant?: 'primary' | 'secondary' | 'outline';
   size?: 'small' | 'medium' | 'large';
   fullWidth?: boolean;
+  userType?: 'patient' | 'doctor' | 'default';
 }
 
 export function CustomButton({ 
   title, 
-  disabled, 
-  variant = 'primary',
+  variant = 'primary', 
   size = 'medium',
   fullWidth = true,
-  style,
+  userType = 'default',
+  style, 
+  disabled, 
   ...props 
 }: CustomButtonProps) {
-  const buttonStyle = [
-    styles.button,
-    styles[variant],
-    styles[size],
-    fullWidth && styles.fullWidth,
-    disabled && styles.disabled,
-    style
-  ];
+  
+  try {
+    const COLORS = getTheme(userType);
+    
+    const getButtonColors = () => {
+      if (disabled) {
+        return {
+          backgroundColor: '#CCCCCC',
+          borderColor: '#CCCCCC',
+          textColor: '#999999'
+        };
+      }
 
-  const textStyle = [
-    styles.buttonText,
-    styles[`${variant}Text`],
-    styles[`${size}Text`],
-    disabled && styles.disabledText
-  ];
+      switch (variant) {
+        case 'primary':
+          return {
+            backgroundColor: COLORS.primary,
+            borderColor: COLORS.primary,
+            textColor: COLORS.white
+          };
+        case 'secondary':
+          if (userType === 'doctor') {
+            return {
+              backgroundColor: COLORS.primary,
+              borderColor: COLORS.primary,
+              textColor: COLORS.white
+            };
+          }
+          return {
+            backgroundColor: COLORS.white,
+            borderColor: COLORS.border,
+            textColor: COLORS.text
+          };
+        case 'outline':
+          return {
+            backgroundColor: 'transparent',
+            borderColor: COLORS.primary,
+            textColor: COLORS.primary
+          };
+        default:
+          return {
+            backgroundColor: COLORS.primary,
+            borderColor: COLORS.primary,
+            textColor: COLORS.white
+          };
+      }
+    };
 
-  return (
-    <TouchableOpacity style={buttonStyle} disabled={disabled} {...props}>
-      <Text style={textStyle}>{title}</Text>
-    </TouchableOpacity>
-  );
+    const colors = getButtonColors();
+
+    const getSizeStyles = () => {
+      switch (size) {
+        case 'small':
+          return {
+            paddingVertical: 8,
+            paddingHorizontal: 16,
+            fontSize: SIZES.small
+          };
+        case 'large':
+          return {
+            paddingVertical: 16,
+            paddingHorizontal: 24,
+            fontSize: SIZES.medium
+          };
+        default:
+          return {
+            paddingVertical: 12,
+            paddingHorizontal: 20,
+            fontSize: SIZES.font
+          };
+      }
+    };
+
+    const sizeStyles = getSizeStyles();
+
+    return (
+      <TouchableOpacity
+        style={[
+          styles.button,
+          {
+            backgroundColor: colors.backgroundColor,
+            borderColor: colors.borderColor,
+            paddingVertical: sizeStyles.paddingVertical,
+            paddingHorizontal: sizeStyles.paddingHorizontal,
+            width: fullWidth ? '100%' : 'auto',
+            opacity: disabled ? 0.6 : 1,
+          },
+          style,
+        ]}
+        disabled={disabled}
+        {...props}
+      >
+        <Text
+          style={{
+            color: colors.textColor,
+            fontSize: sizeStyles.fontSize,
+            fontWeight: '600',
+            textAlign: 'center',
+          }}
+        >
+          {title}
+        </Text>
+      </TouchableOpacity>
+    );
+  } catch (error) {
+    console.error('[CustomButton] Erro no render:', error);
+    
+    return (
+      <TouchableOpacity
+        style={[
+          styles.fallbackButton,
+          { width: fullWidth ? '100%' : 'auto' },
+          style,
+        ]}
+        disabled={disabled}
+        {...props}
+      >
+        <Text style={styles.fallbackText}>
+          {title}
+        </Text>
+      </TouchableOpacity>
+    );
+  }
 }
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: SIZES.radius,
-    alignItems: 'center',
     justifyContent: 'center',
-  },
-  
-  // Variantes
-  primary: {
-    backgroundColor: COLORS.primary,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-  },
-  secondary: {
-    backgroundColor: COLORS.white,
+    alignItems: 'center',
+    borderRadius: SIZES.radius,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 1,
-  },
-  outline: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: COLORS.primary,
-    // Sem sombra para evitar o efeito "por dentro"
   },
   
-  // Tamanhos
-  small: {
-    paddingVertical: createResponsiveStyle(10),
-    paddingHorizontal: createResponsiveStyle(16),
-    minHeight: createResponsiveStyle(40),
-  },
-  medium: {
-    paddingVertical: createResponsiveStyle(14),
-    paddingHorizontal: createResponsiveStyle(20),
-    minHeight: createResponsiveStyle(50),
-  },
-  large: {
-    paddingVertical: createResponsiveStyle(18),
-    paddingHorizontal: createResponsiveStyle(24),
-    minHeight: createResponsiveStyle(58),
+  fallbackButton: {
+    backgroundColor: '#A41856',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: SIZES.radius,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#A41856',
   },
   
-  // Largura total
-  fullWidth: {
-    width: SIZES.buttonWidth,
-  },
-  
-  // Estados
-  disabled: {
-    backgroundColor: '#CCCCCC',
-    elevation: 0,
-    shadowOpacity: 0,
-    borderColor: '#CCCCCC',
-  },
-  
-  // Textos
-  buttonText: {
+  fallbackText: {
+    color: 'white',
+    fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
-  },
-  primaryText: {
-    color: COLORS.white,
-  },
-  secondaryText: {
-    color: COLORS.text,
-  },
-  outlineText: {
-    color: COLORS.primary,
-  },
-  smallText: {
-    fontSize: SIZES.small,
-  },
-  mediumText: {
-    fontSize: SIZES.font,
-  },
-  largeText: {
-    fontSize: SIZES.medium,
-  },
-  disabledText: {
-    color: COLORS.textSecondary,
-  },
+  }
 });
 
 export default CustomButton;

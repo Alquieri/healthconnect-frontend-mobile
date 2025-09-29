@@ -106,4 +106,3 @@ export async function getDoctorByUserId(userId: string) {
     console.error('[Doctor] ❌ Erro ao buscar por User ID:', error.response?.status);
     throw error;
   }
-}

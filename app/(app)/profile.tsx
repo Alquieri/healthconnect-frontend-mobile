@@ -41,9 +41,19 @@ const GuestProfileView = () => {
           />
           
           <CustomButton 
-            title="Criar Conta" 
+            title="Criar Conta de Paciente" 
             variant="outline"
             onPress={() => router.push('/register')}
+            style={styles.guestButton}
+          />
+
+          {/* ✅ Novo botão para cadastro médico */}
+          <CustomButton 
+            title="Sou Médico - Cadastrar" 
+            variant="secondary"
+            userType="doctor"
+            onPress={() => router.push('/registerDoctor')}
+            style={[styles.guestButton, styles.doctorButton]}
           />
         </View>
       </View>
@@ -164,8 +174,7 @@ export default function ProfileScreen() {
           console.log('[Profile] Token inválido, mostrando tela de guest');
           setUserProfile(null);
         } else {
-          Alert.alert('Erro', 'Não foi possível carregar os seus dados.');
-          setUserProfile(null);
+          Alert.alert('Erro', 'Não foi possível carregar o perfil do usuário.');
         }
       } finally {
         setLoading(false);
@@ -175,8 +184,23 @@ export default function ProfileScreen() {
     fetchUserProfile();
   }, [isAuthenticated, session.userId, session.role]);
 
-  // ✅ Loading apenas quando realmente carregando dados de usuário autenticado
-  if (loading && isAuthenticated) {
+  const handleLogout = async () => {
+    Alert.alert(
+      'Sair da Conta',
+      'Tem certeza de que deseja sair da sua conta?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Sair', 
+          style: 'destructive',
+          onPress: logout 
+        },
+      ]
+    );
+  };
+
+  // ✅ Se estiver carregando, mostrar loading
+  if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <ResponsiveContainer centered>
@@ -187,14 +211,19 @@ export default function ProfileScreen() {
     );
   }
 
+  // ✅ Se não estiver logado OU não tiver perfil, mostrar tela de guest
+  if (!isAuthenticated || !userProfile) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <GuestProfileView />
+      </SafeAreaView>
+    );
+  }
+
+  // ✅ Se estiver logado E tiver perfil, mostrar perfil do usuário
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* ✅ Lógica simplificada: se não autenticado OU não tem perfil, mostra Guest */}
-      {!isAuthenticated || !userProfile ? (
-        <GuestProfileView />
-      ) : (
-        <UserProfileView userProfile={userProfile} onLogout={logout} />
-      )}
+      <UserProfileView userProfile={userProfile} onLogout={handleLogout} />
     </SafeAreaView>
   );
 }
@@ -230,9 +259,20 @@ const styles = StyleSheet.create({
   guestButtonsContainer: {
     width: '100%',
     alignItems: 'center',
+    gap: SIZES.medium, // ✅ Espaçamento uniforme entre botões
   },
   guestButton: {
-    marginBottom: SIZES.medium,
+    marginBottom: 0, // ✅ Remove margin pois usamos gap
+  },
+  // ✅ Estilo melhorado para o botão médico
+  doctorButton: {
+    backgroundColor: '#00A651', // Verde médico
+    borderColor: '#00A651',
+    elevation: 3, // ✅ Sombra mais destacada
+    shadowColor: '#00A651',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
   },
   loadingText: {
     fontSize: SIZES.medium,
@@ -276,11 +316,12 @@ const styles = StyleSheet.create({
     padding: SIZES.large, 
     borderRadius: SIZES.radius * 1.5, 
     marginBottom: SIZES.medium, 
-    elevation: 2,
+    // ✅ Sombra corrigida - mais sutil
+    elevation: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   menuItemContent: { 
     flexDirection: 'row', 
@@ -297,13 +338,14 @@ const styles = StyleSheet.create({
     marginRight: SIZES.medium,
   },
   menuItemLabel: { 
-    fontSize: SIZES.medium, 
-    fontWeight: '500',
+    fontSize: SIZES.font, 
+    fontWeight: '500', 
     color: COLORS.text,
     flex: 1,
   },
   logoutItem: {
-    borderColor: COLORS.error,
+    marginTop: SIZES.medium,
     borderWidth: 1,
+    borderColor: COLORS.error + '20',
   },
 });

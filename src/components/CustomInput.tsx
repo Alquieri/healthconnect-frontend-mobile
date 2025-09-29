@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { TextInput, StyleSheet, TextInputProps, View, Text, TouchableOpacity } from 'react-native';
+import { 
+  TextInput, 
+  StyleSheet, 
+  TextInputProps, 
+  View, 
+  Text, 
+  TouchableOpacity,
+  KeyboardTypeOptions // ✅ Adicionar esta importação
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, createResponsiveStyle } from '../constants/theme';
 
@@ -7,7 +15,18 @@ interface CustomInputProps extends TextInputProps {
   label?: string;
   error?: string;
   containerStyle?: any;
-  showPasswordToggle?: boolean; // ✅ Nova prop para mostrar o toggle de senha
+  showPasswordToggle?: boolean;
+  placeholder: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  secureTextEntry?: boolean;
+  keyboardType?: KeyboardTypeOptions; // ✅ Agora deve funcionar
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  autoCorrect?: boolean;
+  multiline?: boolean;
+  numberOfLines?: number;
+  maxLength?: number;
+  style?: any;
 }
 
 export function CustomInput({ 
@@ -15,19 +34,48 @@ export function CustomInput({
   error, 
   containerStyle, 
   style,
-  showPasswordToggle = false, // ✅ Default false
+  showPasswordToggle = false,
   secureTextEntry,
+  placeholder,
+  value,
+  onChangeText,
+  keyboardType = 'default',
+  autoCapitalize = 'sentences',
+  autoCorrect = true,
+  multiline = false,
+  numberOfLines = 1,
+  maxLength,
   ...props 
 }: CustomInputProps) {
-  // ✅ Estado para controlar a visualização da senha
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  
-  // ✅ Determinar se deve mostrar a senha ou não
-  const shouldSecureText = showPasswordToggle ? !isPasswordVisible : secureTextEntry;
-  
-  // ✅ Função para alternar visualização da senha
+
   const togglePasswordVisibility = () => {
     setIsPasswordVisible(!isPasswordVisible);
+  };
+
+  // Determinar se deve mostrar a senha baseado no showPasswordToggle e isPasswordVisible
+  const shouldSecureText = showPasswordToggle ? !isPasswordVisible : secureTextEntry;
+
+  // ✅ Handler para garantir que o maxLength é respeitado
+  const handleTextChange = (text: string) => {
+    console.log('🔍 [CustomInput] Texto recebido:', `"${text}"`, 'Length:', text.length);
+    
+    let processedText = text;
+    
+    // Se maxLength estiver definido, cortar o texto
+    if (maxLength && text.length > maxLength) {
+      processedText = text.substring(0, maxLength);
+      console.log('⚠️ [CustomInput] Texto cortado de', text.length, 'para', maxLength, 'caracteres');
+    }
+    
+    // ✅ Garantir que não há caracteres invisíveis em campos numéricos
+    if (keyboardType === 'numeric' || keyboardType === 'number-pad') {
+      processedText = processedText.replace(/[^\d]/g, '');
+      console.log('🔢 [CustomInput] Apenas números:', `"${processedText}"`, 'Length:', processedText.length);
+    }
+    
+    console.log('🔍 [CustomInput] Texto final:', `"${processedText}"`, 'Length:', processedText.length);
+    onChangeText(processedText);
   };
 
   return (
@@ -39,15 +87,23 @@ export function CustomInput({
           style={[
             styles.input, 
             error && styles.inputError,
-            showPasswordToggle && styles.inputWithIcon, // ✅ Espaço para o ícone
+            showPasswordToggle && styles.inputWithIcon,
             style
           ]}
           secureTextEntry={shouldSecureText}
+          placeholder={placeholder}
           placeholderTextColor={COLORS.placeholder}
+          value={value}
+          onChangeText={handleTextChange} // ✅ Usar o handler que garante maxLength
+          keyboardType={keyboardType}
+          autoCapitalize={autoCapitalize}
+          autoCorrect={autoCorrect}
+          multiline={multiline}
+          numberOfLines={numberOfLines}
+          maxLength={maxLength} // ✅ Aplicar também no TextInput nativo
           {...props}
         />
         
-        {/* ✅ Botão do olhinho apenas se showPasswordToggle for true */}
         {showPasswordToggle && (
           <TouchableOpacity
             style={styles.eyeButton}
@@ -70,9 +126,9 @@ export function CustomInput({
 
 const styles = StyleSheet.create({
   container: {
-    width: SIZES.inputWidth, // ✅ Força a largura sempre
+    width: SIZES.inputWidth,
     marginBottom: SIZES.medium,
-    alignSelf: 'center', // ✅ Centraliza o container
+    alignSelf: 'center',
   },
   label: {
     fontSize: SIZES.small,
@@ -81,14 +137,13 @@ const styles = StyleSheet.create({
     marginBottom: SIZES.tiny,
   },
   
-  // ✅ Container para o input e o ícone
   inputContainer: {
     position: 'relative',
     width: '100%',
   },
   
   input: {
-    width: '100%', // ✅ Força 100% da largura do container
+    width: '100%',
     backgroundColor: COLORS.white,
     paddingHorizontal: SIZES.padding,
     paddingVertical: createResponsiveStyle(14),
@@ -104,9 +159,8 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   
-  // ✅ Input com espaço para o ícone do olhinho
   inputWithIcon: {
-    paddingRight: SIZES.padding + 30, // Espaço extra para o ícone
+    paddingRight: SIZES.padding + 30,
   },
   
   inputError: {
@@ -114,12 +168,11 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   
-  // ✅ Estilo do botão do olhinho
   eyeButton: {
     position: 'absolute',
     right: SIZES.padding,
     top: '50%',
-    transform: [{ translateY: -10 }], // Centraliza verticalmente
+    transform: [{ translateY: -10 }],
     zIndex: 1,
   },
   

@@ -1,10 +1,11 @@
-import { apiPrivate } from "../api";
 import { SpecialityPath } from "../enums/routes";
+import { apiPrivate } from "../api";
 import { SpecialityDto } from "../models/speciality";
 
 export async function getAllSpecialities(): Promise<SpecialityDto.SpecialityResponse[]> {
   try {
     console.log('[Speciality] 📋 Buscando especialidades...');
+    console.log('[Speciality] 🔗 URL:', SpecialityPath.GET_ALL_SPECIALITIES);
     
     const response = await apiPrivate.get<SpecialityDto.SpecialityResponse[]>(
       SpecialityPath.GET_ALL_SPECIALITIES,
@@ -18,9 +19,13 @@ export async function getAllSpecialities(): Promise<SpecialityDto.SpecialityResp
     );
     
     console.log('[Speciality] ✅ Especialidades carregadas:', response.data.length);
+    console.log('[Speciality] ✅ Primeira especialidade:', response.data[0]);
     return response.data;
   } catch (error: any) {
-    console.error('[Speciality] ❌ Erro:', error.response?.status, error.response?.data);
+    console.error('[Speciality] ❌ Erro completo:', error);
+    console.error('[Speciality] ❌ Status:', error.response?.status);
+    console.error('[Speciality] ❌ Data:', error.response?.data);
+    console.error('[Speciality] ❌ URL que falhou:', error.config?.url);
     throw error;
   }
 }

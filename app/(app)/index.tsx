@@ -10,11 +10,35 @@ import { useAuth } from '../../src/context/AuthContext';
 import { getClientProfileByUserId } from '../../src/api/services/patient';
 import { getDoctorByIdDetail } from '../../src/api/services/doctor';
 
-// Os dados das notificações agora são geridos aqui
+// ✅ Notificações atualizadas com link correto para cadastro médico
 const initialNotifications: Notification[] = [
-  { id: '1', title: 'Bem-vindo!', message: 'Explore os nossos especialistas e agende a sua primeira consulta.', time: '2 dias atrás', read: false, link: '/searchDoctor', type: 'default' },
-  { id: '2', title: 'Complete o seu Cadastro', message: 'Percebemos que o seu perfil não está completo. Toque aqui para finalizar.', time: '3 dias atrás', read: false, link: '/register', type: 'default' },
-  { id: '3', title: 'É um Profissional de Saúde?', message: 'Clique aqui para conhecer a nossa área para médicos.', time: '3 dias atrás', read: true, link: '/doctor-portal', type: 'doctor' },
+  { 
+    id: '1', 
+    title: 'Bem-vindo!', 
+    message: 'Explore os nossos especialistas e agende a sua primeira consulta.', 
+    time: '2 dias atrás', 
+    read: false, 
+    link: '/searchDoctor', 
+    type: 'default' 
+  },
+  { 
+    id: '2', 
+    title: 'Complete o seu Cadastro', 
+    message: 'Percebemos que o seu perfil não está completo. Toque aqui para finalizar.', 
+    time: '3 dias atrás', 
+    read: false, 
+    link: '/register', 
+    type: 'default' 
+  },
+  { 
+    id: '3', 
+    title: 'É um Profissional de Saúde?', 
+    message: 'Clique aqui para se cadastrar como médico e oferecer seus serviços.', 
+    time: '3 dias atrás', 
+    read: true, 
+    link: '/registerDoctor', // ✅ Link correto para cadastro médico
+    type: 'doctor' 
+  },
 ];
 
 export default function HomeScreen() {

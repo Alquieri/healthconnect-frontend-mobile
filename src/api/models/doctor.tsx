@@ -1,13 +1,13 @@
 import { SpecialityDto } from './speciality';
 
 export namespace DoctorDto {
-    // Resposta básica do médico (para listagens)
+
     export interface DoctorSummaryResponse {
         id: string;
         name: string;
         rqe: string;
         specialty: string; 
-        specialtyId?: string; // ID da especialidade para buscar detalhes
+        specialtyId?: string; 
     }
 
     export interface DoctorDetailResponse {

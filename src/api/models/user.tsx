@@ -5,7 +5,7 @@ export namespace UserDto {
         email: string;
         phone?: string;
         password: string;
-        sex:string;
+        sex: string;
         cpf: string;
         birthDate: string;
     }
@@ -15,7 +15,7 @@ export namespace UserDto {
         userId: string;
         name: string;
         email: string;
-        sex:string;
+        sex: string;
         cpf: string;
         phone?: string;
         birthDate: string;
@@ -36,7 +36,8 @@ export namespace UserDto {
         sex: string;
     }
 
-     export interface SpecialitySummary {
+
+    export interface SpecialitySummary {
         specialityName: string;
         rqeNumber: number;
     }
@@ -46,27 +47,12 @@ export namespace UserDto {
         crmState: string;
     }
 
-    export interface RegisterDoctorResponse {
-        Id: string;
-        Specialities: SpecialitySummary[];
-        Crms: crmSummary[];
-        sex: string;
-        biography?: string;
-        userId: string;
-        name: string;
-        email: string;
-        phone?: string;
-        cpf: string;
-        birthDate: string;
-    }
-
     export interface UserResponse {
         id: string;
         name: string;
         email: string;
-        phone?: string;
-        cpf: string;
-        birthDate: string;
+        role: string;
+        createdAt: string;
+        updatedAt: string;
     }
-
 }
