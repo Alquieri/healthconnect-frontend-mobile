@@ -35,3 +35,13 @@ export async function getAllAvailabilityByDoctorId(doctorId: string): Promise<Av
     throw error;
   }
 }
+
+export async function deleteAvailability(availabilityId: string) {
+  try {
+    const response = await apiPrivate.delete(`${AvailabilityPath.DELETE_AVAILABILITY}/${availabilityId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao eliminar disponibilidade:', error);
+    throw error;
+  }
+}
