@@ -328,7 +328,7 @@ export default function MySchedulingScreen() {
   // Reagendar (navegar para appointments)
   const handleRescheduleAppointment = (appointment: AppointmentDisplay) => {
     router.push({
-      pathname: '/appointments',
+      pathname: '/(public)/appointments',
       params: { 
         doctorId: appointment.doctorId,
         reschedule: 'true',
@@ -506,7 +506,7 @@ export default function MySchedulingScreen() {
             </Text>
             <TouchableOpacity
               style={styles.scheduleButton}
-              onPress={() => router.push('/searchDoctor')}
+              onPress={() => router.push('/(public)/searchDoctor')}
             >
               <Text style={styles.scheduleButtonText}>Agendar Consulta</Text>
             </TouchableOpacity>
