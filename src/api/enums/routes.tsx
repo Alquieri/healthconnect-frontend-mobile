@@ -9,6 +9,9 @@ export enum UserPath {
     GET_USER_BY_EMAIL = "/api/v1/user/email",
     GET_ALL_USERS = "/api/v1/user/all",
     UPDATE_USER = "/api/v1/user",
+    DELETE_USER_BY_EMAIL = "/api/v1/user",
+    ADD_ROLE = "/api/v1/user/add-role",
+    REMOVE_ROLE = "/api/v1/user/remove-role",
 }
 
 export enum PatientPath {
@@ -25,6 +28,21 @@ export enum DoctorPath {
     GET_DOCTOR_BY_RQE = "/api/v1/doctor/by-rqe",
     GET_DOCTOR_DETAIL_BY_ID = "/api/v1/doctor/detail",
     GET_DOCTORS_BY_SPECIALITY = "/api/v1/doctor/by-Speciality/all",
+}
+
+export enum DoctorCRMPath {
+    GET_DOCTORCRM_BY_ID = "/api/v1/doctorcrm",
+    CREATE_DOCTORCRM = "/api/v1/doctorcrm",
+    GET_DOCTORCRM_BY_CODE = "/api/v1/doctorcrm/by-code",
+    GET_ALL_DOCTORSCRM = "/api/v1/doctorcrm/all",
+}
+
+export enum DoctorOfficePath {
+    GET_DOCTOR_OFFICE_BY_ID = "/api/v1/doctoroffice",
+    GET_ALL_DOCTOR_OFFICES_BY_DOCTOR_ID = "/api/v1/doctoroffice/all/by-doctor",
+    GET_ALL_DOCTOR_OFFICES = "/api/v1/doctoroffice/all",
+    GET_PRIMARY_DOCTOR_OFFICE_BY_DOCTOR_ID = "/api/v1/doctoroffice/isprimary/office",
+    CREATE_DOCTOR_OFFICE = "/api/v1/doctoroffice",
 }
 
 export enum AvailabilityPath {
