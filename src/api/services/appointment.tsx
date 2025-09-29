@@ -2,10 +2,10 @@ import { apiPrivate } from "../api";
 import { AppointmentPath } from "../enums/routes";
 import { AppointmentDto } from "../models/appointment";
 
-export async function createAppointment(appointmentData: AppointmentDto.AppointmentCreation): Promise<AppointmentDto.AppointmentDetails> {
+export async function createAppointment(appointmentData: AppointmentDto.AppointmentCreation, patientId: string): Promise<AppointmentDto.AppointmentDetails> {
   try {
     const response = await apiPrivate.post<AppointmentDto.AppointmentDetails>(
-      AppointmentPath.CREATE_APPOINTMENT,
+      AppointmentPath.CREATE_APPOINTMENT + `/${patientId}`,
       appointmentData
     );
     return response.data;

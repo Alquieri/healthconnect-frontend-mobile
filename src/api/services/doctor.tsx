@@ -95,3 +95,15 @@ export async function getAllDoctorsBySpeciality(specialityId: string) {
     throw error;
   }
 }
+
+export async function getDoctorByUserId(userId: string) {
+  try {
+    console.log('[Doctor] 👤 Buscando médico por User ID:', userId);
+    const response = await apiPrivate.get(`${DoctorPath.GET_DOCTOR_BY_USER_ID}/${userId}`);
+    console.log('[Doctor] ✅ Médico encontrado por User ID');
+    return response.data;
+  } catch (error: any) {
+    console.error('[Doctor] ❌ Erro ao buscar por User ID:', error.response?.status);
+    throw error;
+  }
+}
