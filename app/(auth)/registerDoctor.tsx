@@ -291,19 +291,19 @@ export default function RegisterDoctorScreen() {
 
       // ✅ Payload usando UserDto.RegisterDoctor
       const payload: UserDto.RegisterDoctor = { 
-        // Dados pessoais
+  // Dados pessoais
         name: name.trim(),
         email: email.trim().toLowerCase(),
         phone: phoneCleaned,
         password: password,
         cpf: cpfCleaned,
-        sex: sex!, // 'Male' ou 'Female'
-        birthDate: date!.toISOString().slice(0, 10), // YYYY-MM-DD
+        sex: sex!,
+        birthDate: date!.toISOString().slice(0, 10),
         // Dados profissionais
         rqe: cleanedRqe,
         crm: cleanedCrm,
         crmState: crmState.trim(),
-        specialty: selectedSpecialityName, // ✅ Campo correto: specialty (não speciality)
+        speciality: selectedSpecialityName, // ✅ MUDANÇA: specialty -> speciality
         biography: biography.trim() || `Médico especialista em ${selectedSpecialityName}.`
       };
 

@@ -1,5 +1,15 @@
 export namespace UserDto {
 
+    export interface RegisterPatient {
+        name: string;
+        email: string;
+        phone?: string;
+        password: string;
+        cpf: string;
+        sex: string;
+        birthDate: string;
+    }
+
     export interface RegisterPatientResponse {
         id: string;
         userId: string;
@@ -11,13 +21,13 @@ export namespace UserDto {
         birthDate: string;
     }
 
-     export interface RegisterDoctor {
+    export interface RegisterDoctor {
         name: string;
         email: string;
         phone?: string;
         password: string;
         cpf: string;
-        specialty: string;
+        speciality: string;
         birthDate: string;
         rqe: string;
         crm: string;
@@ -26,6 +36,16 @@ export namespace UserDto {
         sex: string;
     }
 
+    export interface RegisterDoctorResponse {
+        id: string;
+        userId: string;
+        name: string;
+        email: string;
+        sex: string;
+        cpf: string;
+        phone?: string;
+        birthDate: string;
+    }
 
     export interface SpecialitySummary {
         specialityName: string;
