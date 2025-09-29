@@ -20,15 +20,6 @@ export default function DoctorLayout() {
           height: 60 + insets.bottom,
           paddingBottom: insets.bottom + 5,
           paddingTop: 8,
-          elevation: 8,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '500',
         },
       }}
     >
@@ -76,27 +67,10 @@ export default function DoctorLayout() {
         }}
       />
 
-      <Tabs.Screen 
-        name="schedule" 
-        options={{ href: null, headerShown: false }} 
-      />
-      <Tabs.Screen 
-        name="appointments" 
-        options={{ href: null, headerShown: false }} 
-      />
-      <Tabs.Screen 
-        name="availability" 
-        options={{ href: null, headerShown: false }} 
-      />
-      <Tabs.Screen 
-        name="myDetails" 
-        options={{ href: null, headerShown: false }} 
-      />
+      <Tabs.Screen name="myDetails" options={{ href: null }} />
       
-      <Tabs.Screen 
-        name="dashboardTemporario" 
-        options={{ href: null, headerShown: false }} 
-      />
+      <Tabs.Screen name="about" options={{ href: null }} />
+      <Tabs.Screen name="searchDoctor" options={{ href: null }} />
     </Tabs>
   );
 }

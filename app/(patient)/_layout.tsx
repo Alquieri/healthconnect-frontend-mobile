@@ -20,15 +20,6 @@ export default function PatientLayout() {
           height: 60 + insets.bottom,
           paddingBottom: insets.bottom + 5,
           paddingTop: 8,
-          elevation: 8,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '500',
         },
       }}
     >
@@ -76,18 +67,11 @@ export default function PatientLayout() {
         }}
       />
 
-      <Tabs.Screen 
-        name="appointments" 
-        options={{ href: null, headerShown: false }} 
-      />
-      <Tabs.Screen 
-        name="myDetails" 
-        options={{ href: null, headerShown: false }} 
-      />
-      <Tabs.Screen 
-        name="notifications" 
-        options={{ href: null, headerShown: false }} 
-      />
+      <Tabs.Screen name="appointments" options={{ href: null }} />
+      <Tabs.Screen name="myDetails" options={{ href: null }} />
+      
+      <Tabs.Screen name="about" options={{ href: null }} />
+      <Tabs.Screen name="publicHome" options={{ href: null }} />
     </Tabs>
   );
 }
