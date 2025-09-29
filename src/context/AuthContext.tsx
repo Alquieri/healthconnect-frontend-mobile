@@ -44,45 +44,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // ✅ useProtectedRoute
   useEffect(() => {
-    const inAuthGroup = segments[0] === '(auth)';
-    const inPatientGroup = segments[0] === '(patient)';
-    const inDoctorGroup = segments[0] === '(doctor)';
-    
-    console.log('[AuthProvider] 📍 Segmentos atuais:', segments);
-    console.log('[AuthProvider] 🔍 Status:', status, 'Role:', session?.role);
+  const segments = useSegments();
+  const inAuthGroup = segments[0] === '(auth)';
+  const inPublicGroup = segments[0] === '(public)';
+  const inPatientGroup = segments[0] === '(patient)';
+  const inDoctorGroup = segments[0] === '(doctor)';
+  
+  console.log('[AuthProvider] 📍 Segmentos:', segments);
+  console.log('[AuthProvider] 🔍 Status:', status, 'Role:', session?.role);
 
-    if (status === 'pending') return;
+  if (status === 'pending') return;
 
-    if (status === 'unauthenticated') {
-      if (!inAuthGroup) {
-        console.log('[AuthProvider] ➡️ Redirecionando para login');
-        router.replace('/(auth)/login');
-      }
-    } else if (status === 'authenticated' && session?.role) {
-      if (inAuthGroup) {
-        // Vem do login - redirecionar baseado no role
-        if (session.role === 'doctor') {
-          console.log('[AuthProvider] ➡️ Redirecionando médico para dashboard');
-          router.replace('/(doctor)');
-        } else {
-          console.log('[AuthProvider] ➡️ Redirecionando paciente para home');
-          router.replace('/(patient)');
-        }
+  if (status === 'unauthenticated') {
+    if (!inAuthGroup && !inPublicGroup) {
+      console.log('[AuthProvider] ➡️ Redirecionando para público');
+      router.replace('/(public)');
+    }
+  } else if (status === 'authenticated' && session?.role) {
+    if (inAuthGroup || inPublicGroup) {
+      if (session.role === 'doctor') {
+        console.log('[AuthProvider] ➡️ Redirecionando médico para dashboard');
+        router.replace('/(doctor)');
       } else {
-        // Verificar se está no grupo correto baseado no role
-        const shouldBeInDoctorGroup = session.role === 'doctor';
-        const shouldBeInPatientGroup = ['client', 'patient', 'admin'].includes(session.role);
-        
-        if (shouldBeInDoctorGroup && !inDoctorGroup) {
-          console.log('[AuthProvider] ➡️ Médico no grupo errado, redirecionando');
-          router.replace('/(doctor)');
-        } else if (shouldBeInPatientGroup && !inPatientGroup) {
-          console.log('[AuthProvider] ➡️ Paciente no grupo errado, redirecionando');
-          router.replace('/(patient)');
-        }
+        console.log('[AuthProvider] ➡️ Redirecionando paciente para app');
+        router.replace('/(patient)');
       }
     }
-  }, [status, session?.role, segments, router]);
+  }
+}, [status, session?.role, segments, router]);
 
   // ✅ Bootstrap na inicialização
   useEffect(() => {
