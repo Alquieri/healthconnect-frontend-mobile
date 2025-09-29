@@ -1,15 +1,5 @@
 export namespace UserDto {
 
-    export interface RegisterPatient {
-        name: string;
-        email: string;
-        phone?: string;
-        password: string;
-        sex: string;
-        cpf: string;
-        birthDate: string;
-    }
-
     export interface RegisterPatientResponse {
         id: string;
         userId: string;
@@ -21,7 +11,7 @@ export namespace UserDto {
         birthDate: string;
     }
 
-    export interface RegisterDoctor {
+     export interface RegisterDoctor {
         name: string;
         email: string;
         phone?: string;
