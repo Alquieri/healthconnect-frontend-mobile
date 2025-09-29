@@ -86,41 +86,70 @@ export async function registerPatient(request: UserDto.RegisterPatient): Promise
 }
 
 export async function registerDoctor(request: UserDto.RegisterDoctor): Promise<UserDto.RegisterDoctorResponse> {
-
     try {
-        console.log('Registering doctor with request:', request);
-        const { data: response } = await apiPublic.post<UserDto.RegisterDoctorResponse>(UserPath.REGISTER_DOCTOR, request);
-        console.log('Received response:', response);
+        console.log('[UserService] 🩺 Registrando médico...');
+        console.log('[UserService] 📝 Dados do médico:', JSON.stringify(request, null, 2));
+        
+        const { data: response } = await apiPublic.post<UserDto.RegisterDoctorResponse>(
+            UserPath.REGISTER_DOCTOR, 
+            request,
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'ngrok-skip-browser-warning': 'true',
+                },
+                timeout: 30000
+            }
+        );
+        
+        console.log('[UserService] ✅ Médico registrado com sucesso');
         return response;
+        
     } catch (error: any) {
+        console.error('[UserService] ❌ Erro no registro de médico:', error);
+        
         if (error instanceof AxiosError) {
-
+            const status = error.response?.status;
             const responseData = error.response?.data;
-            const errorMessage = responseData?.title || responseData?.message || 'Os dados enviados são inválidos.';
+            
+            let errorMessage = 'Erro no registro médico.';
+            
+            switch (status) {
+                case 400:
+                    if (responseData?.errors) {
+                        const errors = responseData.errors;
+                        let specificErrors = [];
+                        
+                        Object.keys(errors).forEach(field => {
+                            if (Array.isArray(errors[field])) {
+                                specificErrors.push(`${field}: ${errors[field][0]}`);
+                            }
+                        });
+                        
+                        errorMessage = specificErrors.length > 0 ? specificErrors.join('\n') : 'Dados inválidos fornecidos.';
+                    } else {
+                        errorMessage = responseData?.message || responseData?.title || 'Dados inválidos fornecidos.';
+                    }
+                    break;
+                case 409:
+                    errorMessage = 'Email, CPF ou CRM já cadastrado no sistema.';
+                    break;
+                case 422:
+                    errorMessage = 'Dados não processáveis. Verifique as informações.';
+                    break;
+                case 500:
+                    errorMessage = 'Erro interno do servidor. Tente novamente mais tarde.';
+                    break;
+                default:
+                    errorMessage = responseData?.message || responseData?.title || `Erro ${status}: Falha na comunicação com o servidor.`;
+            }
+            
             throw new Error(errorMessage);
-
+        } else if (error.request) {
+            throw new Error('Erro de conexão. Verifique sua internet e tente novamente.');
         } else {
-            console.error('Erro inesperado no registro:', error);
-            throw new Error('Ocorreu um erro inesperado.');
-        }
-    }
-}
-
-export async function getUserByEmail(email: string): Promise<UserDto.UserResponse> {
-
-    try {
-        console.log('Fetching user by email:', email);
-        const { data: response } = await apiPrivate.get<UserDto.UserResponse>(`${UserPath.GET_USER_BY_EMAIL}?email=${encodeURIComponent(email)}`);
-        console.log('Received response:', response);
-        return response;
-    } catch (error: any) {
-        if (error instanceof AxiosError) {
-            const responseData = error.response?.data;
-            const errorMessage = responseData?.title || responseData?.message || 'Não foi possível buscar o usuário.';
-            throw new Error(errorMessage);
-        } else {
-            console.error('Erro inesperado ao buscar usuário:', error);
-            throw new Error('Ocorreu um erro inesperado.');
+            throw new Error('Erro interno. Tente novamente.');
         }
     }
 }
