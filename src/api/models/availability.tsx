@@ -13,5 +13,6 @@ export namespace AvailabilityDto {
     doctorId: string;
     date: Date;
     timeSlots: string[];
+    doctorOfficeId?: string;
   }
 }
