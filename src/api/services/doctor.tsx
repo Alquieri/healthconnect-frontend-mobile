@@ -1,8 +1,5 @@
-import { AxiosError } from 'axios';
-import { DoctorPath, UserPath } from "../enums/routes";
-import { apiPrivate, apiPublic } from "../api";
-import { DoctorDto } from '../models/doctor';
-import { baseURL } from '../config'; // ✅ Importação necessária
+import { DoctorPath } from "../enums/routes";
+import { apiPrivate } from "../api";
 
 export async function getDoctorById(doctorId: string) {
   try {
@@ -99,152 +96,14 @@ export async function getAllDoctorsBySpeciality(specialityId: string) {
   }
 }
 
-// ✅ Função principal de registro
-export async function registerDoctor(request: DoctorDto.RegisterDoctorRequest): Promise<DoctorDto.RegisterDoctorResponse> {
+export async function getDoctorByUserId(userId: string) {
   try {
-    console.log('🌐 [DoctorService] 🩺 Iniciando registro de médico...');
-    console.log('🌐 [DoctorService] 📝 Request payload:', JSON.stringify(request, null, 2));
-    
-    // ✅ Validar se todos os campos obrigatórios estão presentes
-    if (!request.name || !request.email || !request.password || !request.cpf || 
-        !request.phone || !request.birthDate || !request.sex || !request.rqe || 
-        !request.crm || !request.crmState || !request.speciality) { // ✅ ATUALIZADO
-      console.error('🌐 [DoctorService] ❌ Campos obrigatórios faltando no payload');
-      
-      const missingFields = {
-        name: !!request.name,
-        email: !!request.email,
-        password: !!request.password,
-        cpf: !!request.cpf,
-        phone: !!request.phone,
-        birthDate: !!request.birthDate,
-        sex: !!request.sex,
-        rqe: !!request.rqe,
-        crm: !!request.crm,
-        crmState: !!request.crmState, 
-        speciality: !!request.speciality, 
-      };
-      
-      console.error('🌐 [DoctorService] ❌ Campos faltando:', missingFields);
-      throw new Error('Todos os campos obrigatórios devem ser preenchidos');
-    }
-
-    // ✅ Validar formato de email básico
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(request.email)) {
-      console.error('🌐 [DoctorService] ❌ Email inválido:', request.email);
-      throw new Error('Formato de email inválido');
-    }
-
-    // ✅ Construir URL completa para debug
-    const fullUrl = `${baseURL}${UserPath.REGISTER_DOCTOR}`;
-    console.log('🌐 [DoctorService] 🔗 URL completa:', fullUrl);
-    console.log('🌐 [DoctorService] 🔗 Endpoint:', UserPath.REGISTER_DOCTOR);
-    
-    // ✅ Fazer a requisição com headers explícitos
-    const { data: response } = await apiPublic.post<DoctorDto.RegisterDoctorResponse>(
-      UserPath.REGISTER_DOCTOR, 
-      request,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        timeout: 30000 // 30 segundos
-      }
-    );
-    
-    console.log('🌐 [DoctorService] ✅ Resposta recebida com sucesso:', JSON.stringify(response, null, 2));
-    
-    return response;
+    console.log('[Doctor] 👤 Buscando médico por User ID:', userId);
+    const response = await apiPrivate.get(`${DoctorPath.GET_DOCTOR_BY_USER_ID}/${userId}`);
+    console.log('[Doctor] ✅ Médico encontrado por User ID');
+    return response.data;
   } catch (error: any) {
-    console.error('🌐 [DoctorService] ❌ ERRO DETALHADO:');
-    console.error('🌐 [DoctorService] ❌ Full error object:', error);
-    console.error('🌐 [DoctorService] ❌ Error name:', error.name);
-    console.error('🌐 [DoctorService] ❌ Error message:', error.message);
-    console.error('🌐 [DoctorService] ❌ Error code:', error.code);
-    
-    if (error.response) {
-      // Erro com resposta do servidor
-      console.error('🌐 [DoctorService] ❌ Response status:', error.response.status);
-      console.error('🌐 [DoctorService] ❌ Response data:', error.response.data);
-      console.error('🌐 [DoctorService] ❌ Response headers:', error.response.headers);
-      console.error('🌐 [DoctorService] ❌ Config URL:', error.config?.url);
-      
-      const responseData = error.response.data;
-      let errorMessage = 'Erro no cadastro médico.';
-      
-      // ✅ Tratar diferentes status codes com detalhes específicos
-      switch (error.response.status) {
-        case 400:
-          // ✅ Tratar erros de validação específicos
-          if (responseData?.errors) {
-            const errors = responseData.errors;
-            let specificErrors = [];
-            
-            if (errors.CRM) {
-              specificErrors.push(`CRM: ${errors.CRM[0]}`);
-            }
-            if (errors.RQE) {
-              specificErrors.push(`RQE: ${errors.RQE[0]}`);
-            }
-            if (errors.speciality) {
-              specificErrors.push(`Especialidade: ${errors.speciality[0]}`);
-            }
-            if (errors.crmState) {
-              specificErrors.push(`Estado CRM: ${errors.crmState[0]}`);
-            }
-            if (errors.email) {
-              specificErrors.push(`Email: ${errors.email[0]}`);
-            }
-            if (errors.cpf) {
-              specificErrors.push(`CPF: ${errors.cpf[0]}`);
-            }
-            
-            if (specificErrors.length > 0) {
-              errorMessage = specificErrors.join('\n');
-            } else {
-              errorMessage = responseData?.title || 'Dados inválidos fornecidos.';
-            }
-          } else {
-            errorMessage = responseData?.message || responseData?.title || 'Dados inválidos fornecidos.';
-          }
-          break;
-        case 409:
-          errorMessage = 'Email, CPF ou CRM já cadastrado no sistema.';
-          break;
-        case 422:
-          errorMessage = 'Dados não processáveis. Verifique as informações.';
-          break;
-        case 500:
-          errorMessage = 'Erro interno do servidor. Tente novamente mais tarde.';
-          break;
-        default:
-          errorMessage = responseData?.message || responseData?.title || `Erro ${error.response.status}: ${error.response.statusText}`;
-      }
-      
-      throw new Error(errorMessage);
-      
-    } else if (error.request) {
-      // Erro de rede (sem resposta)
-      console.error('🌐 [DoctorService] ❌ Network error - no response received');
-      console.error('🌐 [DoctorService] ❌ Request config:', error.request);
-      console.error('🌐 [DoctorService] ❌ Request timeout:', error.request.timeout);
-      throw new Error('Erro de conexão. Verifique sua internet e tente novamente.');
-      
-    } else {
-      // Erro na configuração da requisição
-      console.error('🌐 [DoctorService] ❌ Request setup error:', error.message);
-      console.error('🌐 [DoctorService] ❌ Error stack:', error.stack);
-      
-      // ✅ Tratar erros específicos de configuração
-      if (error.message.includes('timeout')) {
-        throw new Error('Tempo limite excedido. Tente novamente.');
-      } else if (error.message.includes('Network Error')) {
-        throw new Error('Erro de rede. Verifique sua conexão.');
-      } else {
-        throw new Error('Erro interno na configuração da requisição: ' + error.message);
-      }
-    }
+    console.error('[Doctor] ❌ Erro ao buscar por User ID:', error.response?.status);
+    throw error;
   }
 }

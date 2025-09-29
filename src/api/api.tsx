@@ -4,26 +4,23 @@ import axios, { InternalAxiosRequestConfig } from 'axios';
 import { baseURL } from './config';
 import { getToken, deleteToken } from './services/secure-store.service';
 
-console.log('[API] 🔧 Configurando API com baseURL:', baseURL);
+const createHeaders = () => ({
+  'Content-Type': 'application/json',
+  'ngrok-skip-browser-warning': 'true', 
+});
 
 // API Pública (sem token)
 export const apiPublic = axios.create({
   baseURL,
   timeout: 30000, // ✅ Timeout de 30 segundos
-  headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  },
+  headers: createHeaders(),
 });
 
 // API Privada (com token)
 export const apiPrivate = axios.create({
   baseURL,
   timeout: 30000, // ✅ Timeout de 30 segundos
-  headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  },
+  headers: createHeaders(),
 });
 
 // ✅ Interceptor para API Pública (adicionar logs)

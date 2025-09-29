@@ -16,13 +16,14 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import Checkbox from 'expo-checkbox';
 import { Picker } from '@react-native-picker/picker';
 import Toast from 'react-native-toast-message'; 
-import { registerDoctor } from '../../src/api/services/doctor';
+import { registerDoctor } from '../../src/api/services/user'; // ✅ Service correto
 import { getAllSpecialities } from '../../src/api/services/speciality';
 import { CustomInput } from '../../src/components/CustomInput';
 import { CustomButton } from '../../src/components/CustomButton';
 import { ResponsiveContainer } from '../../src/components/ResponsiveContainer';
 import { getTheme, SIZES, createResponsiveStyle } from '../../src/constants/theme';
 import { SpecialityDto } from '../../src/api/models/speciality';
+import { UserDto } from '../../src/api/models/user'; // ✅ Model correto
 
 export default function RegisterDoctorScreen() {
   const router = useRouter();
@@ -61,9 +62,9 @@ export default function RegisterDoctorScreen() {
       setSpecialitiesLoading(true);
       const data = await getAllSpecialities();
       setSpecialities(data);
-      console.log('🩺 [RegisterDoctor] ✅ Especialidades carregadas:', data.length);
+      console.log('[RegisterDoctor] ✅ Especialidades carregadas:', data.length);
     } catch (error) {
-      console.error('🩺 [RegisterDoctor] ❌ Erro ao carregar especialidades:', error);
+      console.error('[RegisterDoctor] ❌ Erro ao carregar especialidades:', error);
       Toast.show({
         type: 'error',
         text1: 'Erro ao carregar especialidades',
@@ -83,21 +84,21 @@ export default function RegisterDoctorScreen() {
     // Remove qualquer espaço ou caractere especial residual
     const final = limited.trim();
     
-    console.log('🧹 [cleanNumericField] Input:', `"${value}"`, 'Output:', `"${final}"`, 'Length:', final.length, 'MaxLength:', maxLength);
+    console.log('[cleanNumericField] Input:', `"${value}"`, 'Output:', `"${final}"`, 'Length:', final.length, 'MaxLength:', maxLength);
     
     return final;
   };
 
   // ✅ Formatadores com limite rígido
   const formatRQE = (text: string) => {
-    const cleaned = cleanNumericField(text, 8); // ✅ Ajustar para 8 máximo
-    console.log('📝 [formatRQE] Resultado:', `"${cleaned}"`, 'Length:', cleaned.length);
+    const cleaned = cleanNumericField(text, 8);
+    console.log('[formatRQE] Resultado:', `"${cleaned}"`, 'Length:', cleaned.length);
     setRqe(cleaned);
   };
 
   const formatCRM = (text: string) => {
-    const cleaned = cleanNumericField(text, 8); // ✅ Ajustar para um limite mais conservador
-    console.log('📝 [formatCRM] Resultado:', `"${cleaned}"`, 'Length:', cleaned.length);
+    const cleaned = cleanNumericField(text, 8);
+    console.log('[formatCRM] Resultado:', `"${cleaned}"`, 'Length:', cleaned.length);
     setCrm(cleaned);
   };
 
@@ -134,175 +135,181 @@ export default function RegisterDoctorScreen() {
     }
   };
 
-  // ✅ Função principal de registro
+  // ✅ Função de validação centralizada no componente
+  const validateForm = () => {
+    // Validação de campos obrigatórios
+    if (!name || !email || !password || !cpf || !phone || !date || !sex || !rqe || !crm || !crmState || !selectedSpeciality) {
+      const missingFields = {
+        name: !!name,
+        email: !!email,
+        password: !!password,
+        cpf: !!cpf,
+        phone: !!phone,
+        date: !!date,
+        sex: !!sex,
+        rqe: !!rqe,
+        crm: !!crm,
+        crmState: !!crmState,
+        selectedSpeciality: !!selectedSpeciality
+      };
+      
+      console.log('[RegisterDoctor] ❌ Campos obrigatórios faltando:', missingFields);
+      Toast.show({ 
+        type: 'error',
+        text1: 'Campos Incompletos',
+        text2: 'Por favor, preencha todos os campos obrigatórios.'
+      });
+      return false;
+    }
+
+    // Validação de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Toast.show({ 
+        type: 'error',
+        text1: 'Email Inválido',
+        text2: 'Por favor, insira um email válido.'
+      });
+      return false;
+    }
+
+    // Validação de senha
+    if (password.length < 6) {
+      Toast.show({ 
+        type: 'error',
+        text1: 'Senha Muito Curta',
+        text2: 'A senha deve ter pelo menos 6 caracteres.'
+      });
+      return false;
+    }
+
+    if (password !== confirmPassword) {
+      Toast.show({ 
+        type: 'error',
+        text1: 'Erro de Validação',
+        text2: 'As senhas não coincidem!'
+      });
+      return false;
+    }
+
+    // Validação de CPF
+    const cpfCleaned = cpf.replace(/\D/g, '');
+    if (cpfCleaned.length !== 11) {
+      Toast.show({ 
+        type: 'error',
+        text1: 'CPF Inválido',
+        text2: 'O CPF deve ter 11 dígitos.'
+      });
+      return false;
+    }
+
+    // Validação de telefone
+    const phoneCleaned = phone.replace(/\D/g, '');
+    if (phoneCleaned.length < 10) {
+      Toast.show({ 
+        type: 'error',
+        text1: 'Telefone Inválido',
+        text2: 'Por favor, insira um telefone válido.'
+      });
+      return false;
+    }
+
+    // Validação de RQE
+    const cleanedRqe = rqe.replace(/[^\d]/g, '').trim();
+    if (cleanedRqe.length < 3 || cleanedRqe.length > 8) {
+      Toast.show({ 
+        type: 'error',
+        text1: 'RQE Inválido',
+        text2: `O RQE deve ter entre 3 e 8 dígitos. Atual: ${cleanedRqe.length}`
+      });
+      return false;
+    }
+
+    // Validação de CRM
+    const cleanedCrm = crm.replace(/[^\d]/g, '').trim();
+    if (cleanedCrm.length < 4 || cleanedCrm.length > 8) {
+      Toast.show({ 
+        type: 'error',
+        text1: 'CRM Inválido',
+        text2: `O CRM deve ter entre 4 e 8 dígitos. Atual: ${cleanedCrm.length}`
+      });
+      return false;
+    }
+
+    // Validação de estado do CRM
+    if (!crmState || crmState.length < 2) {
+      Toast.show({ 
+        type: 'error',
+        text1: 'Estado do CRM obrigatório',
+        text2: 'Por favor, selecione o estado do seu CRM.'
+      });
+      return false;
+    }
+
+    // Validação de especialidade
+    const selectedSpecialityName = specialities.find(s => s.id === selectedSpeciality)?.name || '';
+    if (!selectedSpecialityName) {
+      Toast.show({ 
+        type: 'error',
+        text1: 'Especialidade Inválida',
+        text2: 'Por favor, selecione uma especialidade válida.'
+      });
+      return false;
+    }
+
+    // Validação de termos
+    if (!termsAccepted) {
+      Toast.show({ 
+        type: 'error',
+        text1: 'Termos não aceitos',
+        text2: 'Você deve aceitar os termos para continuar.'
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  // ✅ Função de registro usando UserDto.RegisterDoctor
   const handleRegister = async () => {
     if (loading) return;
     
     setLoading(true);
     
     try {
-      // ✅ Validações de campos obrigatórios
-      if (!name || !email || !password || !cpf || !phone || !date || !sex || !rqe || !crm || !crmState || !selectedSpeciality) {
-        const missingFields = {
-          name: !!name,
-          email: !!email,
-          password: !!password,
-          cpf: !!cpf,
-          phone: !!phone,
-          date: !!date,
-          sex: !!sex,
-          rqe: !!rqe,
-          crm: !!crm,
-          crmState: !!crmState,
-          selectedSpeciality: !!selectedSpeciality
-        };
-        
-        console.log('🩺 [RegisterDoctor] ❌ Campos obrigatórios faltando:', missingFields);
-        
-        Toast.show({ 
-          type: 'error',
-          text1: 'Campos Incompletos',
-          text2: 'Por favor, preencha todos os campos obrigatórios.'
-        });
+      // Validar formulário
+      if (!validateForm()) {
         return;
       }
 
-      // ✅ Limpeza e validação final dos campos
-      const cleanedRqe = rqe.replace(/[^\d]/g, '').trim().substring(0, 8);
-      const cleanedCrm = crm.replace(/[^\d]/g, '').trim().substring(0, 8);
-
-      console.log('🔍 [Final Check] ==========================================');
-      console.log('🔍 [Final Check] RQE original:', `"${rqe}"`, 'Length:', rqe.length);
-      console.log('🔍 [Final Check] RQE limpo:', `"${cleanedRqe}"`, 'Length:', cleanedRqe.length);
-      console.log('🔍 [Final Check] CRM original:', `"${crm}"`, 'Length:', crm.length);
-      console.log('🔍 [Final Check] CRM limpo:', `"${cleanedCrm}"`, 'Length:', cleanedCrm.length);
-
-      // ✅ Validações com campos limpos
-      if (cleanedRqe.length < 3 || cleanedRqe.length > 8) { // ✅ Máximo 8
-        console.log('🩺 [RegisterDoctor] ❌ RQE inválido:', cleanedRqe, 'Length:', cleanedRqe.length);
-        Toast.show({ 
-          type: 'error',
-          text1: 'RQE Inválido',
-          text2: `O RQE deve ter entre 3 e 8 dígitos. Atual: ${cleanedRqe.length}`
-        });
-        return;
-      }
-
-      if (cleanedCrm.length < 4 || cleanedCrm.length > 8) { // ✅ Máximo 8 para ser conservador
-        console.log('🩺 [RegisterDoctor] ❌ CRM inválido:', cleanedCrm, 'Length:', cleanedCrm.length);
-        Toast.show({ 
-          type: 'error',
-          text1: 'CRM Inválido',
-          text2: `O CRM deve ter entre 4 e 8 dígitos. Atual: ${cleanedCrm.length}`
-        });
-        return;
-      }
-
-      // ✅ Outras validações...
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        Toast.show({ 
-          type: 'error',
-          text1: 'Email Inválido',
-          text2: 'Por favor, insira um email válido.'
-        });
-        return;
-      }
-
-      if (password.length < 6) {
-        Toast.show({ 
-          type: 'error',
-          text1: 'Senha Muito Curta',
-          text2: 'A senha deve ter pelo menos 6 caracteres.'
-        });
-        return;
-      }
-
-      if (password !== confirmPassword) {
-        Toast.show({ 
-          type: 'error',
-          text1: 'Erro de Validação',
-          text2: 'As senhas não coincidem!'
-        });
-        return;
-      }
-
+      // Preparar dados limpos
       const cpfCleaned = cpf.replace(/\D/g, '');
-      if (cpfCleaned.length !== 11) {
-        Toast.show({ 
-          type: 'error',
-          text1: 'CPF Inválido',
-          text2: 'O CPF deve ter 11 dígitos.'
-        });
-        return;
-      }
-
       const phoneCleaned = phone.replace(/\D/g, '');
-      if (phoneCleaned.length < 10) {
-        Toast.show({ 
-          type: 'error',
-          text1: 'Telefone Inválido',
-          text2: 'Por favor, insira um telefone válido.'
-        });
-        return;
-      }
-
-      if (!crmState || crmState.length < 2) {
-        console.log('🩺 [RegisterDoctor] ❌ Estado do CRM inválido:', crmState);
-        Toast.show({ 
-          type: 'error',
-          text1: 'Estado do CRM obrigatório',
-          text2: 'Por favor, selecione o estado do seu CRM.'
-        });
-        return;
-      }
-
-      // ✅ Encontrar nome da especialidade
+      const cleanedRqe = rqe.replace(/[^\d]/g, '').trim();
+      const cleanedCrm = crm.replace(/[^\d]/g, '').trim();
       const selectedSpecialityName = specialities.find(s => s.id === selectedSpeciality)?.name || '';
-      if (!selectedSpecialityName) {
-        console.log('🩺 [RegisterDoctor] ❌ Especialidade não encontrada:', selectedSpeciality);
-        Toast.show({ 
-          type: 'error',
-          text1: 'Especialidade Inválida',
-          text2: 'Por favor, selecione uma especialidade válida.'
-        });
-        return;
-      }
 
-      if (!termsAccepted) {
-        Toast.show({ 
-          type: 'error',
-          text1: 'Termos não aceitos',
-          text2: 'Você deve aceitar os termos para continuar.'
-        });
-        return;
-      }
-
-      // ✅ Payload final com campos limpos
-      const payload = { 
+      // ✅ Payload usando UserDto.RegisterDoctor
+      const payload: UserDto.RegisterDoctor = { 
         // Dados pessoais
         name: name.trim(),
         email: email.trim().toLowerCase(),
         phone: phoneCleaned,
         password: password,
         cpf: cpfCleaned,
-        sex: sex,
-        birthDate: date.toISOString().slice(0, 10),
-        // Dados profissionais - GARANTINDO LIMPEZA TOTAL
+        sex: sex!, // 'Male' ou 'Female'
+        birthDate: date!.toISOString().slice(0, 10), // YYYY-MM-DD
+        // Dados profissionais
         rqe: cleanedRqe,
         crm: cleanedCrm,
         crmState: crmState.trim(),
-        speciality: selectedSpecialityName,
+        specialty: selectedSpecialityName, // ✅ Campo correto: specialty (não speciality)
         biography: biography.trim() || `Médico especialista em ${selectedSpecialityName}.`
       };
 
-      console.log('🔍 [Final Check] Payload final:');
-      console.log('🔍 [Final Check] RQE payload:', `"${payload.rqe}"`, 'Length:', payload.rqe.length);
-      console.log('🔍 [Final Check] CRM payload:', `"${payload.crm}"`, 'Length:', payload.crm.length);
-      console.log('🔍 [Final Check] Payload completo:', JSON.stringify(payload, null, 2));
-
-      console.log('🩺 [RegisterDoctor] ✅ Iniciando registro...');
+      console.log('[RegisterDoctor] ✅ Enviando dados:', payload);
       
+      // ✅ Usar registerDoctor do service user
       await registerDoctor(payload);
       
       Toast.show({
@@ -316,9 +323,7 @@ export default function RegisterDoctorScreen() {
       }, 2500);
 
     } catch (error: any) {
-      console.error('🩺 [RegisterDoctor] ❌ ERRO CAPTURADO:', error);
-      console.error('🩺 [RegisterDoctor] ❌ Error message:', error.message);
-      console.error('🩺 [RegisterDoctor] ❌ Final error message:', error.message);
+      console.error('[RegisterDoctor] ❌ Erro no cadastro:', error);
       
       Toast.show({
         type: 'error',
@@ -478,7 +483,7 @@ export default function RegisterDoctorScreen() {
                 value={rqe} 
                 onChangeText={formatRQE} 
                 keyboardType="number-pad"
-                maxLength={8} // ✅ Atualizado
+                maxLength={8}
                 autoCorrect={false}
                 autoCapitalize="none"
               />
@@ -488,7 +493,7 @@ export default function RegisterDoctorScreen() {
                 value={crm} 
                 onChangeText={formatCRM} 
                 keyboardType="number-pad"
-                maxLength={8} // ✅ Atualizado  
+                maxLength={8}
                 autoCorrect={false}
                 autoCapitalize="none"
               />
@@ -500,7 +505,7 @@ export default function RegisterDoctorScreen() {
                   <Picker
                     selectedValue={crmState}
                     onValueChange={(itemValue) => {
-                      console.log('🩺 [RegisterDoctor] Estado CRM selecionado:', itemValue);
+                      console.log('[RegisterDoctor] Estado CRM selecionado:', itemValue);
                       setCrmState(itemValue);
                     }}
                     style={styles.picker}
@@ -554,7 +559,7 @@ export default function RegisterDoctorScreen() {
                     <Picker
                       selectedValue={selectedSpeciality}
                       onValueChange={(itemValue) => {
-                        console.log('🩺 [RegisterDoctor] Especialidade selecionada:', itemValue);
+                        console.log('[RegisterDoctor] Especialidade selecionada:', itemValue);
                         setSelectedSpeciality(itemValue);
                       }}
                       style={styles.picker}
