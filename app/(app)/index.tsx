@@ -75,6 +75,8 @@ export default function HomeScreen() {
           // Extrair apenas o primeiro nome
           const firstName = doctorData.name.split(' ')[0];
           setUserName(firstName);
+        }else {
+          setUserName('Visitante');
         }
         
       } catch (error: any) {
@@ -115,7 +117,6 @@ export default function HomeScreen() {
   };
   
   const markAllAsRead = () => {
-    // Simula a marcação de todas as notificações como lidas
     const updatedNotifications = notifications.map(n => ({ ...n, read: true }));
     setNotifications(updatedNotifications);
   };
