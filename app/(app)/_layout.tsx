@@ -1,4 +1,3 @@
-// app/(app)/_layout.tsx
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,7 +26,7 @@ export default function PublicLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile" // Esta tela irá para (auth)/login
+        name="profile"
         options={{
           title: 'Entrar',
           headerShown: false,
