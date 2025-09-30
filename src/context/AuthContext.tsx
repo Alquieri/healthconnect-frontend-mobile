@@ -1,10 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useRouter, useSegments } from 'expo-router';
 import { jwtDecode } from 'jwt-decode';
 import { login as apiLogin, logout as apiLogout } from '../api/services/auth';
 import { AuthDto } from '../api/models/auth';
 import { saveToken, getToken, deleteToken } from '../api/services/secure-store.service';
 import { resetApiInstances } from '../api/api';
-import { useRouter, useSegments } from 'expo-router'; 
 
 interface DecodedToken {
   sub: string;
@@ -24,17 +24,38 @@ interface AuthContextType {
   session: Session;
   status: AuthStatus;
   login: (loginData: AuthDto.LoginRequest) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
   forceLogout: () => Promise<void>;
-  refreshAuth: () => Promise<void>; 
+  refreshAuth: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function useProtectedRoute(status: AuthStatus) {
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    const inProtectedGroup = segments[0] === '(patient)' || segments[0] === '(doctor)';
+
+    if (status === 'pending') {
+      return;
+    }
+
+    if (status === 'unauthenticated' && inProtectedGroup) {
+      console.log('[Auth] Acesso negado a rota protegida. Redirecionando para a home pública.');
+      router.replace('/(app)');
+    }
+  }, [status, segments]);
+}
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session>({ token: null, role: null, userId: null });
   const [status, setStatus] = useState<AuthStatus>('pending');
+  const router = useRouter();
+
+  useProtectedRoute(status);
 
   useEffect(() => {
     bootstrapAsync();
@@ -46,41 +67,47 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (storedToken) {
       try {
         const decodedToken: DecodedToken = jwtDecode(storedToken);
-        const userRole = Array.isArray(decodedToken.role) ? decodedToken.role[0] : decodedToken.role;
+        
+        // ✅ CORREÇÃO 1: Lógica de prioridade de role aplicada aqui também
+        let userRole: string;
+        if (Array.isArray(decodedToken.role)) {
+          if (decodedToken.role.includes('doctor')) {
+            userRole = 'doctor';
+          } else {
+            userRole = decodedToken.role[0];
+          }
+        } else {
+          userRole = decodedToken.role;
+        }
+
         setSession({ token: storedToken, role: userRole, userId: decodedToken.sub });
         setStatus('authenticated');
         resetApiInstances();
-        console.log('[AuthProvider] ✅ Sessão restaurada a partir do token.');
+        console.log(`[AuthProvider] ✅ Sessão restaurada como '${userRole}'. Redirecionando...`);
+
+        // ✅ CORREÇÃO 2: Redirecionamento explícito para corrigir o bug de reabertura
+        if (userRole === 'doctor') {
+            router.replace('/(doctor)');
+        } else {
+            router.replace('/(patient)');
+        }
+
       } catch (e) {
-        console.error('[AuthProvider] ❌ Token guardado é inválido. A forçar logout.', e);
-        await forceLogout();
+        console.error('[AuthProvider] ❌ Token guardado é inválido. Forçando logout.', e);
+        await deleteToken();
+        setSession({ token: null, role: null, userId: null });
+        setStatus('unauthenticated');
+        resetApiInstances();
       }
     } else {
+      setSession({ token: null, role: null, userId: null });
       setStatus('unauthenticated');
     }
   };
 
   const refreshAuth = async () => {
     console.log('[AuthProvider] 🔄 Refresh de autenticação...');
-    const storedToken = await getToken();
-    if (storedToken) {
-      try {
-        const decodedToken: DecodedToken = jwtDecode(storedToken);
-        const userRole = Array.isArray(decodedToken.role) ? decodedToken.role[0] : decodedToken.role;
-        setSession({ token: storedToken, role: userRole, userId: decodedToken.sub });
-        setStatus('authenticated');
-        resetApiInstances();
-        console.log('[AuthProvider] ✅ Sessão atualizada com sucesso.');
-      } catch (error) {
-          console.error('[AuthProvider] ❌ Token inválido durante o refresh. A forçar logout.', error);
-          await forceLogout();
-          throw error;
-      }
-    } else {
-      console.log('[AuthProvider] ❌ Token não encontrado no refresh, forçando logout.');
-      await forceLogout();
-      throw new Error("Nenhum token encontrado durante o refresh.");
-    }
+    await bootstrapAsync();
   };
 
   const login = async (loginData: AuthDto.LoginRequest) => {
@@ -89,12 +116,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const response = await apiLogin(loginData);
       await saveToken(response.token);
       const decodedToken: DecodedToken = jwtDecode(response.token);
-      console.log('########## CONTEÚDO REAL DO TOKEN ##########', JSON.stringify(decodedToken, null, 2));
-      const userRole = Array.isArray(decodedToken.role) ? decodedToken.role[0] : decodedToken.role;
+
+      // ✅ CORREÇÃO 1: Lógica de prioridade de role
+      let userRole: string;
+      if (Array.isArray(decodedToken.role)) {
+        if (decodedToken.role.includes('doctor')) {
+          userRole = 'doctor';
+        } else {
+          userRole = decodedToken.role[0];
+        }
+      } else {
+        userRole = decodedToken.role;
+      }
+      
       setSession({ token: response.token, role: userRole, userId: decodedToken.sub });
       setStatus('authenticated');
       resetApiInstances();
-      console.log(`[AuthProvider] ✅ Login como '${userRole}' realizado. UserID: ${decodedToken.sub}`);
+      console.log(`[AuthProvider] ✅ Login como '${userRole}' realizado. Redirecionando...`);
+
+      if (userRole === 'doctor') {
+        router.replace('/(doctor)');
+      } else {
+        router.replace('/(patient)');
+      }
+
     } catch (error) {
       console.error('[AuthProvider] ❌ Erro no login:', error);
       await forceLogout();
@@ -107,6 +152,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setSession({ token: null, role: null, userId: null });
     setStatus('unauthenticated');
     resetApiInstances();
+    
+    console.log('[Auth] Logout forçado. Redirecionando para a home pública.');
+    router.replace('/(app)'); 
   };
   
   const logout = async () => {
