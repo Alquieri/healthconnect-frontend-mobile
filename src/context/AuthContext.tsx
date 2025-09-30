@@ -4,8 +4,8 @@ import { login as apiLogin, logout as apiLogout } from '../api/services/auth';
 import { AuthDto } from '../api/models/auth';
 import { saveToken, getToken, deleteToken } from '../api/services/secure-store.service';
 import { resetApiInstances } from '../api/api';
+import { useRouter, useSegments } from 'expo-router'; 
 
-// --- DEFINIÇÕES DE TIPO ---
 interface DecodedToken {
   sub: string;
   role: string | string[];
@@ -27,7 +27,7 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   forceLogout: () => Promise<void>;
-  refreshAuth: () => Promise<void>; // <-- REINTRODUZIDO
+  refreshAuth: () => Promise<void>; 
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -60,13 +60,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // --- FUNÇÃO REFRESH AUTH REINTRODUZIDA E ADAPTADA ---
   const refreshAuth = async () => {
     console.log('[AuthProvider] 🔄 Refresh de autenticação...');
     const storedToken = await getToken();
     if (storedToken) {
       try {
-        // Usa a mesma lógica do bootstrap para garantir consistência
         const decodedToken: DecodedToken = jwtDecode(storedToken);
         const userRole = Array.isArray(decodedToken.role) ? decodedToken.role[0] : decodedToken.role;
         setSession({ token: storedToken, role: userRole, userId: decodedToken.sub });
@@ -76,7 +74,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } catch (error) {
           console.error('[AuthProvider] ❌ Token inválido durante o refresh. A forçar logout.', error);
           await forceLogout();
-          throw error; // Lança o erro para a tela saber que o refresh falhou
+          throw error;
       }
     } else {
       console.log('[AuthProvider] ❌ Token não encontrado no refresh, forçando logout.');
@@ -86,7 +84,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const login = async (loginData: AuthDto.LoginRequest) => {
-    // ... (função login permanece igual)
     setStatus('pending');
     try {
       const response = await apiLogin(loginData);
@@ -129,7 +126,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     logout,
     isAuthenticated: status === 'authenticated',
     forceLogout,
-    refreshAuth, // <-- REINTRODUZIDO
+    refreshAuth,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
