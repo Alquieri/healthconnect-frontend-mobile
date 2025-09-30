@@ -24,7 +24,7 @@ export enum PatientPath {
 export enum DoctorPath {
     GET_DOCTOR_BY_ID = "/api/v1/doctor",
     GET_ALL_DOCTORS = "/api/v1/doctor/all",
-    GET_DOCTOR_BY_USER_ID = "/api/v1/doctor/user",
+    GET_DOCTOR_BY_USER_ID = "/api/v1/doctor/detail/by-userid",
     GET_DOCTOR_BY_RQE = "/api/v1/doctor/by-rqe",
     GET_DOCTOR_DETAIL_BY_ID = "/api/v1/doctor/detail",
     GET_DOCTORS_BY_SPECIALITY = "/api/v1/doctor/by-Speciality/all",
