@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import { getTheme, SIZES } from '../../src/constants/theme';
-import { getDoctorByIdDetail } from '../../src/api/services/doctor';
+import { getDoctorByUserId } from '../../src/api/services/doctor';
 import { ResponsiveContainer } from '../../src/components/ResponsiveContainer';
 
 interface DoctorProfile {
@@ -25,12 +25,13 @@ export default function DoctorProfileScreen() {
     
     setLoading(true);
     try {
-      const doctorData = await getDoctorByIdDetail(session.userId);
+      console.log("Buscando perfil do médico para userId:", session.userId);
+      const doctorData = await getDoctorByUserId(session.userId);
       setUserProfile({
         id: doctorData.id,
         name: doctorData.name,
         email: doctorData.email,
-        specialty: doctorData.specialty,
+        speciality: doctorData.speciality,
       });
     } catch (error) {
       console.error("Erro ao buscar perfil do médico:", error);
