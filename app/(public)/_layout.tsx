@@ -39,13 +39,13 @@ export default function PublicLayout() {
           title: 'Médicos',
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people" size={size} color={color} />
+            <Ionicons name="search" size={size} color={color} />
           ),
         }}
       />
       
       <Tabs.Screen
-        name="about"
+        name="AboutUs" // ✅ CORRIGIDO: nome igual ao arquivo
         options={{
           title: 'Sobre',
           headerShown: false,
@@ -66,10 +66,11 @@ export default function PublicLayout() {
         }}
       />
 
+      {/* ✅ Rotas ocultas - apenas arquivos que realmente existem */}
       <Tabs.Screen name="appointments" options={{ href: null }} />
-      <Tabs.Screen name="login" options={{ href: null }} />
-      <Tabs.Screen name="register" options={{ href: null }} />
-      <Tabs.Screen name="registerDoctor" options={{ href: null }} />
+      
+      {/* ✅ REMOVIDAS: estas rotas não existem em (public) */}
+      {/* login, register, registerDoctor estão em (auth) */}
     </Tabs>
   );
 }

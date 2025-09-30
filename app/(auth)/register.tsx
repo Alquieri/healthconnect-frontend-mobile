@@ -123,7 +123,7 @@ export default function RegisterScreen() {
       });
 
       setTimeout(() => {
-        router.push('/login');
+        router.push('/(auth)/login'); // ✅ Rota específica
       }, 2500);
 
     } catch (error: any) {
@@ -314,7 +314,7 @@ export default function RegisterScreen() {
             <View style={styles.loginRedirectContainer}>
               <View style={styles.loginRedirect}>
                 <Text style={styles.loginRedirectText}>Já tem uma conta? </Text>
-                <Link href="/login" asChild>
+                <Link href="/(auth)/login" asChild> {/* ✅ Rota específica */}
                   <TouchableOpacity style={styles.loginLinkButton}>
                     <Text style={styles.loginLink}>Entre aqui</Text>
                   </TouchableOpacity>

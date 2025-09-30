@@ -319,7 +319,7 @@ export default function RegisterDoctorScreen() {
       });
 
       setTimeout(() => {
-        router.push('/login');
+        router.push('/(auth)/login'); // ✅ Rota específica
       }, 2500);
 
     } catch (error: any) {

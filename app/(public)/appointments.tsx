@@ -143,7 +143,7 @@ export default function AppointmentsScreen() {
           text1: 'Acesso negado',
           text2: 'Você deve selecionar um médico primeiro'
         });
-        router.replace('/(public)/searchDoctor');
+        router.replace('/(public)/searchDoctor'); // ✅ Rota específica
         return;
       }
 

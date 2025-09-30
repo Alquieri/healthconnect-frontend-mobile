@@ -506,7 +506,7 @@ export default function MySchedulingScreen() {
             </Text>
             <TouchableOpacity
               style={styles.scheduleButton}
-              onPress={() => router.push('/(public)/searchDoctor')}
+              onPress={() => router.push('/(public)/searchDoctor')} // ✅ Rota específica
             >
               <Text style={styles.scheduleButtonText}>Agendar Consulta</Text>
             </TouchableOpacity>

@@ -2,11 +2,10 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getTheme } from '../../src/constants/theme';
+import { COLORS } from '../../src/constants/theme';
 
 export default function PatientLayout() {
   const insets = useSafeAreaInsets();
-  const COLORS = getTheme('patient');
 
   return (
     <Tabs
@@ -16,13 +15,12 @@ export default function PatientLayout() {
         tabBarStyle: {
           backgroundColor: '#ffffff',
           borderTopColor: '#e0e0e0',
-          borderTopWidth: 1,
           height: 60 + insets.bottom,
           paddingBottom: insets.bottom + 5,
-          paddingTop: 8,
         },
       }}
     >
+      {/* ✅ ROTA PRINCIPAL - Home do paciente */}
       <Tabs.Screen
         name="index"
         options={{
@@ -34,17 +32,30 @@ export default function PatientLayout() {
         }}
       />
       
+      {/* ✅ ROTAS PÚBLICAS - acessíveis para pacientes logados */}
       <Tabs.Screen
-        name="searchDoctor"
+        name="/(public)/searchDoctor"
         options={{
-          title: 'Buscar',
+          title: 'Buscar Médicos',
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="search" size={size} color={color} />
           ),
         }}
       />
+
+      <Tabs.Screen
+        name="/(public)/AboutUs"
+        options={{
+          title: 'Sobre Nós',
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="information-circle" size={size} color={color} />
+          ),
+        }}
+      />
       
+      {/* ✅ ROTAS ESPECÍFICAS DO PACIENTE */}
       <Tabs.Screen
         name="MyScheduling"
         options={{
@@ -67,11 +78,9 @@ export default function PatientLayout() {
         }}
       />
 
+      {/* ✅ Rotas ocultas - acessíveis via navegação programática */}
       <Tabs.Screen name="appointments" options={{ href: null }} />
       <Tabs.Screen name="myDetails" options={{ href: null }} />
-      
-      <Tabs.Screen name="about" options={{ href: null }} />
-      <Tabs.Screen name="publicHome" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -16,26 +16,49 @@ export default function DoctorLayout() {
         tabBarStyle: {
           backgroundColor: '#ffffff',
           borderTopColor: '#e0e0e0',
-          borderTopWidth: 1,
           height: 60 + insets.bottom,
           paddingBottom: insets.bottom + 5,
-          paddingTop: 8,
         },
       }}
     >
+      {/* ✅ ROTA PRINCIPAL - Dashboard do médico */}
       <Tabs.Screen
         name="index"
         options={{
           title: 'Dashboard',
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="analytics" size={size} color={color} />
+            <Ionicons name="grid-outline" size={size} color={color} />
           ),
         }}
       />
       
+      {/* ✅ ROTAS PÚBLICAS - acessíveis para médicos logados */}
       <Tabs.Screen
-        name="createAvailability"
+        name="/(public)/searchDoctor"
+        options={{
+          title: 'Colegas',
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people-outline" size={size} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="/(public)/AboutUs"
+        options={{
+          title: 'Sobre',
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="information-circle-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      
+      {/* ✅ ROTAS ESPECÍFICAS DO MÉDICO */}
+      <Tabs.Screen
+        name="/(public)/createAvailability"
         options={{
           title: 'Horários',
           headerShown: false,
@@ -51,7 +74,7 @@ export default function DoctorLayout() {
           title: 'Pacientes',
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people-outline" size={size} color={color} />
+            <Ionicons name="medical-outline" size={size} color={color} />
           ),
         }}
       />
@@ -67,10 +90,9 @@ export default function DoctorLayout() {
         }}
       />
 
+      {/* ✅ Rotas ocultas - acessíveis via navegação programática */}
       <Tabs.Screen name="myDetails" options={{ href: null }} />
-      
-      <Tabs.Screen name="about" options={{ href: null }} />
-      <Tabs.Screen name="searchDoctor" options={{ href: null }} />
+      <Tabs.Screen name="dashboardTemporario" options={{ href: null }} />
     </Tabs>
   );
 }

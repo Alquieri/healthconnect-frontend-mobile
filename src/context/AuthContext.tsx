@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useRouter, useSegments } from 'expo-router'; // ✅ ADICIONAR ESTES IMPORTS
+import { useRouter, useSegments } from 'expo-router';
 import { jwtDecode } from 'jwt-decode';
 import { login as apiLogin, logout as apiLogout } from '../api/services/auth';
 import { AuthDto } from '../api/models/auth';
@@ -38,40 +38,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session>({ token: null, role: null, userId: null });
   const [status, setStatus] = useState<AuthStatus>('pending');
   
-  // ✅ HOOKS DO EXPO ROUTER
+  // ✅ HOOKS DO EXPO ROUTER - declarar apenas uma vez
   const router = useRouter();
   const segments = useSegments();
 
-  // ✅ useProtectedRoute
+  // ✅ Corrigir redirecionamentos no AuthContext
   useEffect(() => {
-  const segments = useSegments();
-  const inAuthGroup = segments[0] === '(auth)';
-  const inPublicGroup = segments[0] === '(public)';
-  const inPatientGroup = segments[0] === '(patient)';
-  const inDoctorGroup = segments[0] === '(doctor)';
-  
-  console.log('[AuthProvider] 📍 Segmentos:', segments);
-  console.log('[AuthProvider] 🔍 Status:', status, 'Role:', session?.role);
+    const inAuthGroup = segments[0] === '(auth)';
+    const inPublicGroup = segments[0] === '(public)';
+    const inPatientGroup = segments[0] === '(patient)';
+    const inDoctorGroup = segments[0] === '(doctor)';
+    const inAppGroup = segments[0] === '(app)';
+    
+    console.log('[AuthProvider] 📍 Segmentos:', segments);
+    console.log('[AuthProvider] 🔍 Status:', status, 'Role:', session?.role);
 
-  if (status === 'pending') return;
+    if (status === 'pending') return;
 
-  if (status === 'unauthenticated') {
-    if (!inAuthGroup && !inPublicGroup) {
-      console.log('[AuthProvider] ➡️ Redirecionando para público');
-      router.replace('/(public)');
-    }
-  } else if (status === 'authenticated' && session?.role) {
-    if (inAuthGroup || inPublicGroup) {
-      if (session.role === 'doctor') {
-        console.log('[AuthProvider] ➡️ Redirecionando médico para dashboard');
-        router.replace('/(doctor)');
-      } else {
-        console.log('[AuthProvider] ➡️ Redirecionando paciente para app');
-        router.replace('/(patient)');
+    if (status === 'unauthenticated') {
+      if (!inAuthGroup && !inPublicGroup) {
+        console.log('[AuthProvider] ➡️ Redirecionando para público');
+        router.replace('/(public)');
+      }
+    } else if (status === 'authenticated' && session?.role) {
+      if (inAuthGroup || inPublicGroup) {
+        if (session.role === 'doctor') {
+          console.log('[AuthProvider] ➡️ Redirecionando médico para doctor');
+          router.replace('/(doctor)');
+        } else {
+          console.log('[AuthProvider] ➡️ Redirecionando paciente para patient');
+          router.replace('/(patient)'); // ✅ Correto para pacientes
+        }
       }
     }
-  }
-}, [status, session?.role, segments, router]);
+  }, [status, session?.role, segments, router]);
 
   // ✅ Bootstrap na inicialização
   useEffect(() => {

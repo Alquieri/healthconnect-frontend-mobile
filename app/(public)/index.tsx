@@ -18,7 +18,7 @@ const initialNotifications: Notification[] = [
     message: 'Explore os nossos especialistas e agende a sua primeira consulta.', 
     time: '2 dias atrás', 
     read: false, 
-    link: '/searchDoctor', 
+    link: '/(public)/searchDoctor', // ✅ Rota específica
     type: 'default' 
   },
   { 
@@ -27,7 +27,7 @@ const initialNotifications: Notification[] = [
     message: 'Percebemos que o seu perfil não está completo. Toque aqui para finalizar.', 
     time: '3 dias atrás', 
     read: false, 
-    link: '/register', 
+    link: '/(auth)/register', // ✅ Rota específica
     type: 'default' 
   },
   { 
@@ -36,7 +36,7 @@ const initialNotifications: Notification[] = [
     message: 'Clique aqui para se cadastrar como médico e oferecer seus serviços.', 
     time: '3 dias atrás', 
     read: true, 
-    link: '/registerDoctor', // ✅ Link correto para cadastro médico
+    link: '/(auth)/registerDoctor', // ✅ Rota específica
     type: 'doctor' 
   },
 ];

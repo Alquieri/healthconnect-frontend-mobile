@@ -36,23 +36,22 @@ const GuestProfileView = () => {
         <View style={styles.guestButtonsContainer}>
           <CustomButton 
             title="Entrar" 
-            onPress={() => router.push('/(auth)/login')}
+            onPress={() => router.push('/(auth)/login')} // ✅ Rota específica
             style={styles.guestButton}
           />
           
           <CustomButton 
             title="Criar Conta de Paciente" 
             variant="outline"
-            onPress={() => router.push('/(auth)/register')}
+            onPress={() => router.push('/(auth)/register')} // ✅ Rota específica
             style={styles.guestButton}
           />
 
-          {/* ✅ Novo botão para cadastro médico */}
           <CustomButton 
             title="Sou Médico - Cadastrar" 
             variant="secondary"
             userType="doctor"
-            onPress={() => router.push('/(auth)/registerDoctor')}
+            onPress={() => router.push('/(auth)/registerDoctor')} // ✅ Rota específica
             style={[styles.guestButton, styles.doctorButton]}
           />
         </View>

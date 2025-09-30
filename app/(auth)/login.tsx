@@ -19,7 +19,8 @@ export default function LoginScreen() {
         setLoading(true);
         try {
             await login({ email, password });
-            router.replace('/(app)');
+            // ✅ Remover redirecionamento manual - deixar AuthContext decidir
+            // router.replace('/(app)'); // ❌ Remover esta linha
         } catch (error: any) {
             Alert.alert("Erro no Login", error.message || "Não foi possível entrar. Verifique suas credenciais.");
         } finally {
@@ -88,7 +89,7 @@ export default function LoginScreen() {
                         <View style={styles.registerRedirectContainer}>
                             <View style={styles.registerRedirect}>
                                 <Text style={styles.registerRedirectText}>Não tem uma conta? </Text>
-                                <Link href="/register" asChild>
+                                <Link href="/(auth)/register" asChild> {/* ✅ Rota específica */}
                                     <TouchableOpacity style={styles.registerLinkButton}>
                                         <Text style={styles.registerLink}>Cadastre-se</Text>
                                     </TouchableOpacity>
@@ -98,9 +99,9 @@ export default function LoginScreen() {
                             {/* ✅ Link médico com cor verde específica */}
                             <View style={styles.doctorRedirect}>
                                 <Text style={styles.doctorRedirectText}>É médico? </Text>
-                                <Link href="/registerDoctor" asChild>
+                                <Link href="/(auth)/registerDoctor" asChild> {/* ✅ Rota específica */}
                                     <TouchableOpacity style={styles.doctorLinkButton}>
-                                        <Text style={styles.doctorRegisterLink}>Cadastro Profissional</Text>
+                                        <Text style={styles.doctorRegisterLink}>Cadastrar como Médico</Text>
                                     </TouchableOpacity>
                                 </Link>
                             </View>
