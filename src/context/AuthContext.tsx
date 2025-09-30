@@ -67,15 +67,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (storedToken) {
       try {
         const decodedToken: DecodedToken = jwtDecode(storedToken);
-        
-        // ✅ CORREÇÃO 1: Lógica de prioridade de role aplicada aqui também
         let userRole: string;
         if (Array.isArray(decodedToken.role)) {
-          if (decodedToken.role.includes('doctor')) {
-            userRole = 'doctor';
-          } else {
-            userRole = decodedToken.role[0];
-          }
+          userRole = decodedToken.role.includes('doctor') ? 'doctor' : decodedToken.role[0];
         } else {
           userRole = decodedToken.role;
         }
@@ -83,27 +77,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession({ token: storedToken, role: userRole, userId: decodedToken.sub });
         setStatus('authenticated');
         resetApiInstances();
-        console.log(`[AuthProvider] ✅ Sessão restaurada como '${userRole}'. Redirecionando...`);
+        console.log(`[AuthProvider] ✅ Sessão restaurada como '${userRole}'.`);
 
-        // ✅ CORREÇÃO 2: Redirecionamento explícito para corrigir o bug de reabertura
-        if (userRole === 'doctor') {
-            router.replace('/(doctor)');
-        } else {
-            router.replace('/(patient)');
-        }
+        // ❌ REMOVA O BLOCO DE REDIRECIONAMENTO DAQUI ❌
+        // if (userRole === 'doctor') {
+        //   router.replace('/(doctor)');
+        // } else {
+        //   router.replace('/(patient)');
+        // }
 
       } catch (e) {
-        console.error('[AuthProvider] ❌ Token guardado é inválido. Forçando logout.', e);
-        await deleteToken();
-        setSession({ token: null, role: null, userId: null });
-        setStatus('unauthenticated');
-        resetApiInstances();
+        // ... (seu catch block)
       }
     } else {
       setSession({ token: null, role: null, userId: null });
       setStatus('unauthenticated');
     }
   };
+
 
   const refreshAuth = async () => {
     console.log('[AuthProvider] 🔄 Refresh de autenticação...');
