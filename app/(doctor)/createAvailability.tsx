@@ -77,6 +77,20 @@ export default function CreateAvailabilityScreen() {
     setTimeSlots([]); // Limpa as seleções de horário
   };
 
+  // Função para selecionar/desselecionar todos os horários
+  const handleSelectAll = () => {
+    if (timeSlots.length === availableHours.length) {
+      // Se todos estão selecionados, desmarcar todos
+      setTimeSlots([]);
+    } else {
+      // Selecionar todos
+      setTimeSlots([...availableHours]);
+    }
+  };
+
+  // Verificar se todos os horários estão selecionados
+  const areAllSelected = timeSlots.length === availableHours.length && availableHours.length > 0;
+
   const handleSaveAvailability = async () => {
     if (timeSlots.length === 0) {
       Toast.show({
@@ -187,7 +201,23 @@ export default function CreateAvailabilityScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🕐 Selecionar Horários</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>🕐 Selecionar Horários</Text>
+            <TouchableOpacity 
+              style={styles.selectAllButton}
+              onPress={handleSelectAll}
+            >
+              <Ionicons 
+                name={areAllSelected ? "checkbox" : "checkbox-outline"} 
+                size={20} 
+                color={COLORS.primary} 
+              />
+              <Text style={styles.selectAllText}>
+                {areAllSelected ? 'Desmarcar Todos' : 'Selecionar Todos'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          
           <Text style={styles.sectionSubtitle}>
             Toque nos horários que você estará disponível (intervalos de {consultationDuration} minutos)
           </Text>
@@ -278,16 +308,37 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 30,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#333333',
-    marginBottom: 10,
   },
   sectionSubtitle: {
     fontSize: 14,
     color: '#666666',
     marginBottom: 15,
+  },
+  selectAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    gap: 6,
+  },
+  selectAllText: {
+    fontSize: 14,
+    color: '#00A651',
+    fontWeight: '500',
   },
   dateButton: {
     flexDirection: 'row',
