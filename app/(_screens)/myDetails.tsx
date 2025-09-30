@@ -17,6 +17,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import Toast from 'react-native-toast-message';
 import { useAuth } from '../../src/context/AuthContext';
 import { COLORS, SIZES } from '../../src/constants/theme';
+import { HEADER_CONSTANTS } from '../../src/constants/layout';
 import { CustomInput } from '../../src/components/CustomInput';
 import { CustomButton } from '../../src/components/CustomButton';
 import { getClientProfileByUserId } from '../../src/api/services/patient';
@@ -123,7 +124,7 @@ export default function MyDetailsScreen() {
     setName(profileData.name);
     setEmail(profileData.email);
     setPhone(profileData.phone);
-    setSex(profileData.sex || '');
+    setSex((profileData.sex as 'Male' | 'Female' | '') || '');
     
     if (profileData.birthDate) {
       try {
@@ -168,7 +169,7 @@ export default function MyDetailsScreen() {
         setName(userProfile.name);
         setEmail(userProfile.email);
         setPhone(userProfile.phone);
-        setSex(userProfile.sex || '');
+        setSex((userProfile.sex as 'Male' | 'Female' | '') || '');
         setBirthDate(userProfile.birthDate ? new Date(userProfile.birthDate) : null);
       }
     }
@@ -496,7 +497,7 @@ export default function MyDetailsScreen() {
             {renderInfoField('Tipo de Conta', 
               session.role === 'client' ? 'Paciente' : 
               session.role === 'doctor' ? 'Médico' : 
-              session.role, 
+              session.role || '', 
               'shield'
             )}
           </View>
