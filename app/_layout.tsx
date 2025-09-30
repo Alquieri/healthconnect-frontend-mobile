@@ -1,53 +1,56 @@
+// app/_layout.tsx
 import 'expo-dev-client';
 import React, { useEffect } from 'react';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { SplashScreen, Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { Platform } from 'react-native';
 import Toast from 'react-native-toast-message';
 
+// Oculta a splash screen nativa
 SplashScreen.preventAutoHideAsync();
 
-function MainLayout() {
-  const { status } = useAuth();
+function RootLayoutNav() {
+  const { status, session } = useAuth();
 
   useEffect(() => {
+    // Mostra o app quando o status de autenticação for decidido
     if (status !== 'pending') {
       SplashScreen.hideAsync();
     }
   }, [status]);
 
-  // Enquanto o status de autenticação é verificado, não mostramos nada.
-  // A SplashScreen do próprio dispositivo continua visível.
   if (status === 'pending') {
-    return null;
+    return null; // A splash screen nativa continua visível
   }
 
-  // A lógica principal foi alterada aqui
   return (
-    <>
-      <StatusBar 
-        style="dark" 
-        backgroundColor="transparent"
-        translucent={Platform.OS === 'android'}
-      />
-      
-      <Stack screenOptions={{ headerShown: false }}>
-        {/* 1. O grupo (app) agora está SEMPRE acessível, tornando-se a entrada principal */}
+    <Stack screenOptions={{ headerShown: false }}>
+      {status === 'authenticated' ? (
+        // Usuário LOGADO
+        <>
+          {session.role === 'doctor' ? (
+            // Se for médico, mostra o grupo do médico
+            <Stack.Screen name="(doctor)" />
+          ) : (
+            // Para outros roles (paciente, admin), mostra o grupo do paciente
+            <Stack.Screen name="(patient)" />
+          )}
+        </>
+      ) : (
+        // Usuário DESLOGADO
+        // Mostra o grupo público (app)
         <Stack.Screen name="(app)" />
-        
-        {/* 2. O grupo (auth) também fica disponível para ser navegado quando necessário */}
-        {/* Apresentá-lo como 'modal' cria uma experiência de login mais agradável */}
-        <Stack.Screen name="(auth)" options={{ presentation: 'modal' }} />
-      </Stack>
-    </>
+      )}
+      
+      {/* O grupo (auth) fica sempre disponível como um modal */}
+      <Stack.Screen name="(auth)" options={{ presentation: 'modal' }} />
+    </Stack>
   );
 }
 
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <MainLayout />
+      <RootLayoutNav />
       <Toast />
     </AuthProvider>
   );
