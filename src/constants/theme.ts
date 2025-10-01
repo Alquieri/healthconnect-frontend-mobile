@@ -38,7 +38,7 @@ const DEFAULT_THEME = {
   primaryDark: '#7d1344',
 };
 
-const DOCTOR_THEME = {
+export const DOCTOR_THEME = {
   ...BASE_COLORS,
   primary: '#00A651',
   secondary: '#666666',

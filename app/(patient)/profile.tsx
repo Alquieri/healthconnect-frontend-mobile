@@ -55,7 +55,7 @@ export default function PatientProfileScreen() {
 
   const menuOptions = [
     { id: '1', label: 'Meus Dados', icon: 'person-circle-outline' as const, action: () => router.push('/myDetails') },
-    { id: '2', label: 'Meus Agendamentos', icon: 'calendar-outline' as const, action: () => router.push('/myScheduling') },
+    { id: '2', label: 'Meus Agendamentos', icon: 'calendar-outline' as const, action: () => router.push('/MyScheduling') },
     { id: '3', label: 'Médicos Favoritos', icon: 'heart-outline' as const, action: () => { /* Navegar para Favoritos */ } },
   ];
 

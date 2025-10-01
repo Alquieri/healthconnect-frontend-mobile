@@ -1,8 +1,8 @@
-import axios, { AxiosError } from 'axios';
+import { AxiosError } from 'axios';
 import { apiPrivate, apiPublic } from '../api'; 
 import { AuthPath } from '../enums/routes'
 import { AuthDto } from '../models/auth'
-import { saveToken, deleteToken } from './secure-store.service'; 
+import { saveToken } from './secure-store.service'; // ✅ Removido deleteToken daqui
 
 export async function login(request: AuthDto.LoginRequest): Promise<AuthDto.LoginResponse> {
     try {
@@ -14,12 +14,11 @@ export async function login(request: AuthDto.LoginRequest): Promise<AuthDto.Logi
         return response;
     } catch (error: any) {
         throw new Error(error?.message || 'Ocorreu um erro inesperado durante o login.');
-
     }
 }
 
-
+// ✅ Movido logout para um arquivo separado para evitar ciclos
 export async function logout(): Promise<void> {
-    await deleteToken();
+    // A implementação de deleteToken será chamada diretamente no AuthContext
     delete apiPrivate.defaults.headers.common['Authorization'];
 }
