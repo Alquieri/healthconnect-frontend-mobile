@@ -10,12 +10,14 @@ interface DecodedToken {
   sub: string;
   role: string | string[];
   email: string;
+  profileId: string;
 }
 
 interface Session {
   token: string | null;
   role: string | null;
   userId: string | null;
+  profileId: string | null;
 }
 
 type AuthStatus = 'pending' | 'authenticated' | 'unauthenticated';
@@ -33,7 +35,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [session, setSession] = useState<Session>({ token: null, role: null, userId: null });
+  const [session, setSession] = useState<Session>({ token: null, role: null, userId: null, profileId: null });
   const [status, setStatus] = useState<AuthStatus>('pending');
 
   useEffect(() => {
@@ -55,19 +57,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           userRole = decodedToken.role;
         }
 
-        setSession({ token: storedToken, role: userRole, userId: decodedToken.sub });
+        setSession({ token: storedToken, role: userRole, userId: decodedToken.sub, profileId: decodedToken.profileId });
         setStatus('authenticated');
         resetApiInstances();
         console.log(`[AuthProvider] ✅ Sessão restaurada como '${userRole}'.`);
       } catch (e) {
-        console.error('[AuthProvider] ❌ Token guardado é inválido. Limpando sessão.', e);
+        console.error('[AuthProvider] ❌ Token inválido ou expirado:', e);
         await deleteToken();
-        setSession({ token: null, role: null, userId: null });
-        setStatus('unauthenticated');
         resetApiInstances();
+        setSession({ token: null, role: null, userId: null, profileId: null });
+        setStatus('unauthenticated');
+        console.log('[AuthProvider] Sessão limpa. Redirecionando para a home pública.');
+        router.replace('/(app)');
       }
     } else {
-      setSession({ token: null, role: null, userId: null });
+      setSession({ token: null, role: null, userId: null, profileId: null });
       setStatus('unauthenticated');
     }
   };
@@ -83,9 +87,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const response = await apiLogin(loginData);
       // Salva o novo token
       await saveToken(response.token);
+<<<<<<< Updated upstream
       // Re-executa o bootstrap para decodificar o novo token e definir o estado.
       // Isso mantém a lógica de definição de estado em um único lugar.
       await bootstrapAsync();
+=======
+      const decodedToken: DecodedToken = jwtDecode(response.token);
+
+      // ✅ CORREÇÃO 1: Lógica de prioridade de role
+      let userRole: string;
+      if (Array.isArray(decodedToken.role)) {
+        if (decodedToken.role.includes('doctor')) {
+          userRole = 'doctor';
+        } else {
+          userRole = decodedToken.role[0];
+        }
+      } else {
+        userRole = decodedToken.role;
+      }
+      
+      setSession({ token: response.token, role: userRole, userId: decodedToken.sub, profileId: decodedToken.profileId });
+      setStatus('authenticated');
+      resetApiInstances();
+      console.log(`[AuthProvider] ✅ Login como '${userRole}' realizado. Redirecionando...`);
+
+      if (userRole === 'doctor') {
+        router.replace('/(doctor)');
+      } else {
+        router.replace('/(patient)');
+      }
+
+>>>>>>> Stashed changes
     } catch (error) {
       // Se o login falhar, força um logout completo para limpar qualquer estado inválido
       await forceLogout();
@@ -96,7 +128,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const forceLogout = async () => {
     await deleteToken();
-    setSession({ token: null, role: null, userId: null });
+    setSession({ token: null, role: null, userId: null, profileId: null });
     setStatus('unauthenticated');
     resetApiInstances();
     console.log('[Auth] Logout forçado. Estado atualizado.');

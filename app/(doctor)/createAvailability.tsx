@@ -14,7 +14,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import Toast from 'react-native-toast-message';
 import { CustomButton } from '../../src/components/CustomButton';
 import { useAuth } from '../../src/context/AuthContext';
-import { createAvailability } from '../../src/api/services/availability';
+import { createAvailabilityList } from '../../src/api/services/availability';
 import { getTheme, SIZES } from '../../src/constants/theme';
 import { AvailabilityDto } from '../../src/api/models/availability';
 
@@ -27,7 +27,7 @@ export default function CreateAvailabilityScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [timeSlots, setTimeSlots] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [consultationDuration, setConsultationDuration] = useState(30); // Novo estado para duração
+  const [consultationDuration, setConsultationDuration] = useState(30);
 
   // Opções de duração disponíveis
   const durationOptions = [10, 15, 20, 30, 45, 60];
@@ -104,18 +104,25 @@ export default function CreateAvailabilityScreen() {
     try {
       setLoading(true);
 
-      const availabilityData: AvailabilityDto.AvailabilityRegistration = {
-        doctorId: session.userId!,
-        date: selectedDate,
-        timeSlots: timeSlots,
-        durationMinutes: consultationDuration, // Adiciona a duração
-      };
+      const availabilityList: AvailabilityDto.AvailabilityRegistration[] = timeSlots.map(timeSlot => {
+        const [hours, minutes] = timeSlot.split(':').map(Number);
+        const slotDateTime = new Date(selectedDate);
+        slotDateTime.setHours(hours, minutes, 0, 0);
 
-      await createAvailability(availabilityData);
+        return {
+          doctorId: session.userId!,
+          slotDateTime: slotDateTime.toISOString(),
+          durationMinutes: consultationDuration,
+        };
+      });
+
+      console.log('[CreateAvailability] Enviando lista de disponibilidades:', availabilityList);
+
+      await createAvailabilityList(availabilityList);
 
       Toast.show({
         type: 'success',
-        text1: 'Disponibilidade cadastrada!',
+        text1: 'Disponibilidades cadastradas!',
         text2: `${timeSlots.length} horários de ${consultationDuration}min adicionados para ${selectedDate.toLocaleDateString('pt-BR')}`
       });
 
@@ -123,11 +130,11 @@ export default function CreateAvailabilityScreen() {
       setSelectedDate(new Date());
 
     } catch (error: any) {
-      console.error('Erro ao cadastrar disponibilidade:', error);
+      console.error('Erro ao cadastrar disponibilidades:', error);
       Toast.show({
         type: 'error',
         text1: 'Erro ao cadastrar',
-        text2: error.message || 'Não foi possível cadastrar a disponibilidade.'
+        text2: error.message || 'Não foi possível cadastrar as disponibilidades.'
       });
     } finally {
       setLoading(false);
@@ -172,7 +179,7 @@ export default function CreateAvailabilityScreen() {
           )}
         </View>
 
-        {/* Nova seção para duração das consultas */}
+        {/* Seção para duração das consultas */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>⏱️ Duração das Consultas</Text>
           <Text style={styles.sectionSubtitle}>
@@ -259,12 +266,25 @@ export default function CreateAvailabilityScreen() {
                 <Text style={styles.summaryLabel}>Horários: </Text>
                 {timeSlots.length} selecionados
               </Text>
+              <View style={styles.previewContainer}>
+                <Text style={styles.previewTitle}>Horários que serão criados:</Text>
+                {timeSlots.slice(0, 3).map((time, index) => (
+                  <Text key={index} style={styles.previewTime}>
+                    • {selectedDate.toLocaleDateString('pt-BR')} às {time} ({consultationDuration}min)
+                  </Text>
+                ))}
+                {timeSlots.length > 3 && (
+                  <Text style={styles.previewMore}>
+                    ... e mais {timeSlots.length - 3} horários
+                  </Text>
+                )}
+              </View>
             </View>
           </View>
         )}
 
         <CustomButton
-          title={loading ? 'Salvando...' : 'Cadastrar Disponibilidade'}
+          title={loading ? 'Salvando...' : 'Cadastrar Disponibilidades'}
           onPress={handleSaveAvailability}
           disabled={loading || timeSlots.length === 0}
           userType="doctor"
@@ -355,7 +375,6 @@ const styles = StyleSheet.create({
     color: '#333333',
     fontWeight: '500',
   },
-  // Estilos para a seleção de duração
   durationGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -424,6 +443,29 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontWeight: '600',
+  },
+  previewContainer: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  previewTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666666',
+    marginBottom: 5,
+  },
+  previewTime: {
+    fontSize: 12,
+    color: '#333333',
+    marginBottom: 2,
+  },
+  previewMore: {
+    fontSize: 12,
+    color: '#666666',
+    fontStyle: 'italic',
+    marginTop: 2,
   },
   saveButton: {
     marginTop: 20,

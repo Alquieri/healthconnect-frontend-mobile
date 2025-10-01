@@ -135,7 +135,7 @@ export default function MyDetailsScreen() {
       }
     }
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro ao carregar perfil:', error);
     Alert.alert('Erro', `Não foi possível carregar seus dados: ${error.message || 'Erro desconhecido'}`);
   } finally {

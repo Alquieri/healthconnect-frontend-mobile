@@ -18,6 +18,8 @@ import { HEADER_CONSTANTS } from '../../src/constants/layout';
 import { getAllAvailabilityByDoctorId } from '../../src/api/services/availability';
 import { createAppointment } from '../../src/api/services/appointment';
 import { AvailabilityDto } from '../../src/api/models/availability';
+import { getClientProfileByUserId } from '../../src/api/services/patient';
+import { useAuth } from '../../src/context/AuthContext';
 
 interface Doctor {
   id: string;
@@ -50,7 +52,7 @@ interface DaySchedule {
 export default function AppointmentsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  
+  const session = useAuth();
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null);
@@ -222,8 +224,7 @@ export default function AppointmentsScreen() {
       };
 
       console.log('[Appointments] Criando agendamento:', appointmentData);
-
-      const createdAppointment = await createAppointment(appointmentData);
+      const createdAppointment = await createAppointment(appointmentData, session.profileId);
 
       console.log('[Appointments] Agendamento criado:', createdAppointment);
 
