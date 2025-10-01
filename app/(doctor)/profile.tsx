@@ -58,8 +58,8 @@ export default function DoctorProfileScreen() {
   
   // Menu de opções específico para o médico
   const menuOptions = [
-    { id: '1', label: 'Meus Dados', icon: 'person-circle-outline' as const, action: () => router.push('/(_screens)/myDetails') },
-    { id: '2', label: 'Gerenciar Agenda', icon: 'calendar-outline' as const, action: () => router.push('/(doctor)/myAgenda') }, // Rota específica do médico
+    { id: '1', label: 'Meus Dados', icon: 'person-circle-outline' as const, action: () => router.push('/myDetails') },
+    { id: '2', label: 'Gerenciar Agenda', icon: 'calendar-outline' as const, action: () => router.push('/myAgenda') }, // Rota específica do médico
     { id: '3', label: 'Meus Pacientes', icon: 'people-outline' as const, action: () => { /* Navegar para Pacientes */ } },
   ];
 
