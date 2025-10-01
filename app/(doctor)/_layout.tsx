@@ -20,20 +20,19 @@ export default function DoctorLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="grid-outline" size={size} color={color} />,
         }}
       />
-       <Tabs.Screen
-        name="myAgenda"
-        options={{
-          title: 'Minha Agenda',
-          headerShown: false,
-          tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} />,
-        }}
-      />
       <Tabs.Screen
         name="profile" 
         options={{
           title: 'Meu Perfil',
           headerShown: false,
           tabBarIcon: ({ color, size }) => <Ionicons name="person-circle-outline" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="myDetails" 
+        options={{
+          href: null,
+          headerShown: false,
         }}
       />
     </Tabs>
