@@ -25,7 +25,7 @@ export default function PatientLayout() {
         options={{
           title: 'Agenda',
           headerShown: false,
-          tabBarIcon: ({ color, size }) => <Ionicons name="calendar" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -36,6 +36,20 @@ export default function PatientLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />,
         }}
       />
+      <Tabs.Screen
+              name="myDetails" 
+              options={{
+                href: null,
+                headerShown: false,
+              }}
+            />
+      <Tabs.Screen
+              name="appointments" 
+              options={{
+                href: null,
+                headerShown: false,
+              }}
+            />
     </Tabs>
   );
 }
