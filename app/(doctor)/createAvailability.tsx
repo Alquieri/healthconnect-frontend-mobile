@@ -110,7 +110,7 @@ export default function CreateAvailabilityScreen() {
         slotDateTime.setHours(hours, minutes, 0, 0);
 
         return {
-          doctorId: session.userId!,
+          doctorId: session.profileId!,
           slotDateTime: slotDateTime.toISOString(),
           durationMinutes: consultationDuration,
         };
