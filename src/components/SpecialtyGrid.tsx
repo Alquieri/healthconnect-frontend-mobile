@@ -8,7 +8,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 const { width } = Dimensions.get('window');
 const PAGE_WIDTH = width;
 
-const iconMapping: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = {
+const iconMapping: Record<string, keyof typeof MaterialCommunityIcons.glyphMap | 'custom'> = {
   'Cardiologista': 'heart-outline',
   'Psicólogo': 'head-outline',
   'Psiquiatra': 'head-question-outline',
@@ -16,7 +16,7 @@ const iconMapping: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> 
   'Neurologista': 'head-cog-outline',
   'Clínico Geral': 'doctor',
   'Clínica Geral': 'doctor',
-  'Pediatra': 'baby-face-outline',
+  'Pediatra': 'custom', // ✅ Marca como customizado
   'Oftalmologista': 'eye-outline',
   'Ginecologista': 'gender-female',
   'Ortopedista': 'bone',
@@ -25,10 +25,16 @@ const iconMapping: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> 
   'Default': 'medical-bag'
 };
 
+// ✅ Adicionar mapeamento de imagens personalizadas
+const customImageMapping: Record<string, any> = {
+  'Pediatra': require('../../assets/icons-home/IconPediatra.png'),
+};
+
 export type SpecialtyItem = {
   id: string;
   name: string;
-  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  icon: keyof typeof MaterialCommunityIcons.glyphMap | 'custom';
+  customImage?: any; // ✅ Adicionar propriedade opcional para imagem personalizada
 };
 
 const createPages = (data: SpecialtyItem[], itemsPerPage: number) => {
@@ -38,6 +44,13 @@ const createPages = (data: SpecialtyItem[], itemsPerPage: number) => {
   }
   return pages;
 };
+
+const formatSpecialtyData = (specialty: any) => ({
+  id: specialty.id,
+  name: specialty.name,
+  icon: iconMapping[specialty.name] || iconMapping['Default'],
+  customImage: iconMapping[specialty.name] === 'custom' ? customImageMapping[specialty.name] : null,
+});
 
 export function SpecialtyGrid() {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -53,25 +66,22 @@ export function SpecialtyGrid() {
         
         const apiSpecialties = await getAllSpecialities();
         
-        const mappedSpecialties: SpecialtyItem[] = apiSpecialties.map((specialty) => ({
-          id: specialty.id,
-          name: specialty.name,
-          icon: iconMapping[specialty.name] || iconMapping['Default']
-        }));
+        const mappedSpecialties: SpecialtyItem[] = apiSpecialties.map(formatSpecialtyData);
         
         setSpecialties(mappedSpecialties);
       } catch (err) {
         console.error('Erro ao carregar especialidades:', err);
         setError('Não foi possível carregar as especialidades');
         
+        // ✅ Fallback com imagem personalizada
         const fallbackSpecialties: SpecialtyItem[] = [
-  { id: '1', name: 'Cardiologista', icon: 'heart-outline' },
-  { id: '2', name: 'Psicólogo', icon: 'head-outline' }, 
-  { id: '3', name: 'Dermatologista', icon: 'content-cut' },
-  { id: '4', name: 'Neurologista', icon: 'head-cog-outline' },
-  { id: '5', name: 'Clínico Geral', icon: 'doctor' },
-  { id: '6', name: 'Pediatra', icon: 'baby-face-outline' },
-];
+          { id: '1', name: 'Cardiologista', icon: 'heart-outline', customImage: null },
+          { id: '2', name: 'Psicólogo', icon: 'head-outline', customImage: null }, 
+          { id: '3', name: 'Dermatologista', icon: 'content-cut', customImage: null },
+          { id: '4', name: 'Neurologista', icon: 'head-cog-outline', customImage: null },
+          { id: '5', name: 'Clínico Geral', icon: 'doctor', customImage: null },
+          { id: '6', name: 'Pediatra', icon: 'custom', customImage: require('../../assets/icons-home/IconPediatra.png') },
+        ];
         setSpecialties(fallbackSpecialties);
       } finally {
         setLoading(false);

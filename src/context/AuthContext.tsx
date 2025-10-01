@@ -5,17 +5,18 @@ import { AuthDto } from '../api/models/auth';
 import { saveToken, getToken, deleteToken } from '../api/services/secure-store.service';
 import { resetApiInstances } from '../api/api';
 
-// --- DEFINIÇÕES DE TIPO ---
 interface DecodedToken {
   sub: string;
   role: string | string[];
   email: string;
+  profileId: string;
 }
 
 interface Session {
   token: string | null;
   role: string | null;
   userId: string | null;
+  profileId: string | null;
 }
 
 type AuthStatus = 'pending' | 'authenticated' | 'unauthenticated';
@@ -24,16 +25,16 @@ interface AuthContextType {
   session: Session;
   status: AuthStatus;
   login: (loginData: AuthDto.LoginRequest) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
   forceLogout: () => Promise<void>;
-  refreshAuth: () => Promise<void>; // <-- REINTRODUZIDO
+  refreshAuth: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [session, setSession] = useState<Session>({ token: null, role: null, userId: null });
+  const [session, setSession] = useState<Session>({ token: null, role: null, userId: null, profileId: null });
   const [status, setStatus] = useState<AuthStatus>('pending');
 
   useEffect(() => {
@@ -46,70 +47,62 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (storedToken) {
       try {
         const decodedToken: DecodedToken = jwtDecode(storedToken);
-        const userRole = Array.isArray(decodedToken.role) ? decodedToken.role[0] : decodedToken.role;
-        setSession({ token: storedToken, role: userRole, userId: decodedToken.sub });
+        
+        // Lógica de prioridade de 'role' para consistência
+        let userRole: string;
+        if (Array.isArray(decodedToken.role)) {
+          userRole = decodedToken.role.includes('doctor') ? 'doctor' : decodedToken.role[0];
+        } else {
+          userRole = decodedToken.role;
+        }
+
+        setSession({ token: storedToken, role: userRole, userId: decodedToken.sub, profileId: decodedToken.profileId });
         setStatus('authenticated');
         resetApiInstances();
-        console.log('[AuthProvider] ✅ Sessão restaurada a partir do token.');
+        console.log(`[AuthProvider] ✅ Sessão restaurada como '${userRole}'.`);
+
       } catch (e) {
-        console.error('[AuthProvider] ❌ Token guardado é inválido. A forçar logout.', e);
-        await forceLogout();
+        console.error('[AuthProvider] ❌ Token inválido ou expirado:', e);
+        await deleteToken();
+        resetApiInstances();
+        setSession({ token: null, role: null, userId: null, profileId: null });
+        setStatus('unauthenticated');
+        console.log('[AuthProvider] Sessão limpa. Redirecionando para a home pública.');
+        router.replace('/(app)');
       }
     } else {
+      setSession({ token: null, role: null, userId: null, profileId: null });
       setStatus('unauthenticated');
     }
   };
 
-  // --- FUNÇÃO REFRESH AUTH REINTRODUZIDA E ADAPTADA ---
   const refreshAuth = async () => {
     console.log('[AuthProvider] 🔄 Refresh de autenticação...');
-    const storedToken = await getToken();
-    if (storedToken) {
-      try {
-        // Usa a mesma lógica do bootstrap para garantir consistência
-        const decodedToken: DecodedToken = jwtDecode(storedToken);
-        const userRole = Array.isArray(decodedToken.role) ? decodedToken.role[0] : decodedToken.role;
-        setSession({ token: storedToken, role: userRole, userId: decodedToken.sub });
-        setStatus('authenticated');
-        resetApiInstances();
-        console.log('[AuthProvider] ✅ Sessão atualizada com sucesso.');
-      } catch (error) {
-          console.error('[AuthProvider] ❌ Token inválido durante o refresh. A forçar logout.', error);
-          await forceLogout();
-          throw error; // Lança o erro para a tela saber que o refresh falhou
-      }
-    } else {
-      console.log('[AuthProvider] ❌ Token não encontrado no refresh, forçando logout.');
-      await forceLogout();
-      throw new Error("Nenhum token encontrado durante o refresh.");
-    }
+    await bootstrapAsync();
   };
 
   const login = async (loginData: AuthDto.LoginRequest) => {
-    // ... (função login permanece igual)
-    setStatus('pending');
     try {
+      // Faz o login na API
       const response = await apiLogin(loginData);
+      // Salva o novo token
       await saveToken(response.token);
-      const decodedToken: DecodedToken = jwtDecode(response.token);
-      console.log('########## CONTEÚDO REAL DO TOKEN ##########', JSON.stringify(decodedToken, null, 2));
-      const userRole = Array.isArray(decodedToken.role) ? decodedToken.role[0] : decodedToken.role;
-      setSession({ token: response.token, role: userRole, userId: decodedToken.sub });
-      setStatus('authenticated');
-      resetApiInstances();
-      console.log(`[AuthProvider] ✅ Login como '${userRole}' realizado. UserID: ${decodedToken.sub}`);
+      await bootstrapAsync();
+
     } catch (error) {
-      console.error('[AuthProvider] ❌ Erro no login:', error);
+      // Se o login falhar, força um logout completo para limpar qualquer estado inválido
       await forceLogout();
-      throw error;
+      console.error('[AuthProvider] ❌ Erro no login:', error);
+      throw error; // Lança o erro para a tela de login poder mostrá-lo
     }
   };
 
   const forceLogout = async () => {
     await deleteToken();
-    setSession({ token: null, role: null, userId: null });
+    setSession({ token: null, role: null, userId: null, profileId: null });
     setStatus('unauthenticated');
     resetApiInstances();
+    console.log('[Auth] Logout forçado. Estado atualizado.');
   };
   
   const logout = async () => {
@@ -129,7 +122,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     logout,
     isAuthenticated: status === 'authenticated',
     forceLogout,
-    refreshAuth, // <-- REINTRODUZIDO
+    refreshAuth,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,5 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
-
+import { logout } from './auth';
 const TOKEN_KEY = "com.healthconnect.auth.token";
 
 export const saveToken = async (token: string): Promise<void> => {
@@ -22,6 +22,7 @@ export const getToken = async (): Promise<string | null> => {
             return token;
         } else {
             console.log('[SecureStore] ❌ Nenhum token encontrado');
+            logout();
             return null;
         }
     } catch (error) {

@@ -1,53 +1,63 @@
+// app/_layout.tsx
 import 'expo-dev-client';
 import React, { useEffect } from 'react';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
-import { SplashScreen, Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { Platform } from 'react-native';
+import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import Toast from 'react-native-toast-message';
 
 SplashScreen.preventAutoHideAsync();
 
-function MainLayout() {
-  const { status } = useAuth();
+function RootLayoutNav() {
+  const { status, session } = useAuth();
+  const router = useRouter();
+  const segments = useSegments();
 
   useEffect(() => {
-    if (status !== 'pending') {
-      SplashScreen.hideAsync();
+    if (status === 'pending') {
+      return; // Não faz nada enquanto o status não for definido.
     }
-  }, [status]);
 
-  // Enquanto o status de autenticação é verificado, não mostramos nada.
-  // A SplashScreen do próprio dispositivo continua visível.
-  if (status === 'pending') {
-    return null;
-  }
+    const inAuthGroup = segments[0] === '(auth)';
 
-  // A lógica principal foi alterada aqui
+    if (status === 'authenticated') {
+      const targetGroup = session.role === 'doctor' ? '(doctor)' : '(patient)';
+      if (segments[0] !== targetGroup) {
+        router.replace(`/${targetGroup}`);
+      }
+    } else if (status === 'unauthenticated') {
+      if (!inAuthGroup && segments[0] !== '(app)') {
+        router.replace('/(app)');
+      }
+    }
+  }, [status, session.role, segments, router]);
+  
   return (
-    <>
-      <StatusBar 
-        style="dark" 
-        backgroundColor="transparent"
-        translucent={Platform.OS === 'android'}
-      />
-      
-      <Stack screenOptions={{ headerShown: false }}>
-        {/* 1. O grupo (app) agora está SEMPRE acessível, tornando-se a entrada principal */}
-        <Stack.Screen name="(app)" />
-        
-        {/* 2. O grupo (auth) também fica disponível para ser navegado quando necessário */}
-        {/* Apresentá-lo como 'modal' cria uma experiência de login mais agradável */}
-        <Stack.Screen name="(auth)" options={{ presentation: 'modal' }} />
-      </Stack>
-    </>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(app)" />
+      <Stack.Screen name="(patient)" />
+      <Stack.Screen name="(doctor)" />
+      <Stack.Screen name="(auth)" options={{ presentation: 'modal' }} />
+    </Stack>
   );
 }
+
+function Main() {
+    const { status } = useAuth();
+
+    useEffect(() => {
+        if (status !== 'pending') {
+            SplashScreen.hideAsync();
+        }
+    }, [status]);
+
+    return <RootLayoutNav />;
+}
+
 
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <MainLayout />
+      <Main />
       <Toast />
     </AuthProvider>
   );

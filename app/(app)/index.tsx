@@ -9,8 +9,7 @@ import { NotificationsPopup, Notification } from '../../src/components/Notificat
 import { useAuth } from '../../src/context/AuthContext';
 import { getClientProfileByUserId } from '../../src/api/services/patient';
 import { getDoctorByIdDetail } from '../../src/api/services/doctor';
-
-// ✅ Notificações atualizadas com link correto para cadastro médico
+import "../../src/components/SpecialtyGrid"
 const initialNotifications: Notification[] = [
   { 
     id: '1', 
@@ -36,27 +35,23 @@ const initialNotifications: Notification[] = [
     message: 'Clique aqui para se cadastrar como médico e oferecer seus serviços.', 
     time: '3 dias atrás', 
     read: true, 
-    link: '/registerDoctor', // ✅ Link correto para cadastro médico
+    link: '/registerDoctor',
     type: 'doctor' 
   },
 ];
 
 export default function HomeScreen() {
-  // ✅ Estado para o nome do usuário com valor padrão
   const { session, isAuthenticated } = useAuth();
-  const [userName, setUserName] = useState('Visitante'); // ✅ Padrão para não logados
+  const [userName, setUserName] = useState('Visitante'); 
   const [loadingUserName, setLoadingUserName] = useState(false);
   
   const [isNotificationsVisible, setIsNotificationsVisible] = useState(false);
   
-  // Estado para gerir a lista e o status de 'não lido'
   const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
   const [hasUnread, setHasUnread] = useState(false);
 
-  // ✅ Carregar nome do usuário da API APENAS se estiver logado
   useEffect(() => {
     const loadUserName = async () => {
-      // ✅ Se não estiver autenticado, usar nome padrão
       if (!isAuthenticated || !session.userId) {
         setUserName('Visitante');
         return;
@@ -65,16 +60,16 @@ export default function HomeScreen() {
       try {
         setLoadingUserName(true);
         
-        if (session.role === 'client' || session.role === 'patient' || session.role === 'admin') {
+        if (session.role === 'patient') {
           const patientData = await getClientProfileByUserId(session.userId);
-          // Extrair apenas o primeiro nome
           const firstName = patientData.name.split(' ')[0];
           setUserName(firstName);
         } else if (session.role === 'doctor') {
-          const doctorData = await getDoctorByIdDetail(session.userId);
-          // Extrair apenas o primeiro nome
+          const doctorData = await getDoctorByIdDetail(session.profileId!);
           const firstName = doctorData.name.split(' ')[0];
           setUserName(firstName);
+        }else {
+          setUserName('Visitante');
         }
         
       } catch (error: any) {
@@ -115,7 +110,6 @@ export default function HomeScreen() {
   };
   
   const markAllAsRead = () => {
-    // Simula a marcação de todas as notificações como lidas
     const updatedNotifications = notifications.map(n => ({ ...n, read: true }));
     setNotifications(updatedNotifications);
   };

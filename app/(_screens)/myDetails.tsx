@@ -17,11 +17,11 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import Toast from 'react-native-toast-message';
 import { useAuth } from '../../src/context/AuthContext';
 import { COLORS, SIZES } from '../../src/constants/theme';
+import { HEADER_CONSTANTS } from '../../src/constants/layout';
 import { CustomInput } from '../../src/components/CustomInput';
 import { CustomButton } from '../../src/components/CustomButton';
 import { getClientProfileByUserId } from '../../src/api/services/patient';
-import { getDoctorByIdDetail } from '../../src/api/services/doctor';
-import { HEADER_CONSTANTS } from '../../src/constants/layout';
+import { getDoctorByUserId } from '../../src/api/services/doctor';
 
 // --- INTERFACES ---
 interface UserProfile {
@@ -68,60 +68,80 @@ export default function MyDetailsScreen() {
   }, [isAuthenticated, session.userId]);
 
   const loadUserProfile = async () => {
-    try {
-      setLoading(true);
-      let profileData: UserProfile;
-      
-      if (session.role === 'client' || session.role === 'patient' || session.role === 'admin') {
-        const patientData = await getClientProfileByUserId(session.userId!);
-        profileData = {
-          id: patientData.id,
-          userId: patientData.userId,
-          name: patientData.name,
-          email: patientData.email,
-          phone: patientData.phone,
-          cpf: patientData.cpf,
-          birthDate: patientData.birthDate?.toString() || '',
-          sex: patientData.sex,
-        };
-      } else if (session.role === 'doctor') {
-        const doctorData = await getDoctorByIdDetail(session.userId!);
-        profileData = {
-          id: doctorData.id,
-          name: doctorData.name,
-          email: doctorData.email,
-          phone: doctorData.phone,
-          cpf: doctorData.cpf,
-          birthDate: doctorData.birthDate?.toString() || '',
-          specialty: doctorData.specialty,
-          rqe: doctorData.rqe,
-          crm: doctorData.crm,
-          biography: doctorData.biography,
-        };
-      } else {
-        throw new Error(`Tipo de usuário desconhecido: ${session.role}`);
-      }
-      
-      setUserProfile(profileData);
-      
-      // Inicializar campos editáveis
-      setName(profileData.name);
-      setEmail(profileData.email);
-      setPhone(profileData.phone);
-      setSex(profileData.sex || '');
-      
-      if (profileData.birthDate) {
-        setBirthDate(new Date(profileData.birthDate));
-      }
-      
-    } catch (error) {
-      console.error('Erro ao carregar perfil:', error);
-      Alert.alert('Erro', 'Não foi possível carregar seus dados.');
-      router.back();
-    } finally {
-      setLoading(false);
+  try {
+    setLoading(true);
+    let profileData: UserProfile;
+    
+    if (!session.userId) {
+      throw new Error('ID do usuário não disponível');
     }
-  };
+    
+    if (session.role === 'client' || session.role === 'patient' || session.role === 'admin') {
+      console.log(`Carregando perfil de paciente para ID ${session.userId}`);
+      const patientData = await getClientProfileByUserId(session.userId);
+      
+      if (!patientData) {
+        throw new Error('Dados do paciente não encontrados');
+      }
+      
+      profileData = {
+        id: patientData.id,
+        userId: patientData.userId,
+        name: patientData.name || '',
+        email: patientData.email || '',
+        phone: patientData.phone || '',
+        cpf: patientData.cpf || '',
+        birthDate: patientData.birthDate?.toString() || '',
+        sex: patientData.sex || '',
+      };
+    } else if (session.role === 'doctor') {
+      console.log(`Carregando perfil de médico para ID ${session.userId}`);
+      const doctorData = await getDoctorByUserId(session.userId);
+      console.log(`Carregando depois do get ${doctorData.name}`);
+      if (!doctorData) {
+        throw new Error('Dados do médico não encontrados');
+      }
+      
+      profileData = {
+        id: doctorData.id,
+        name: doctorData.name || '',
+        email: doctorData.email || '',
+        phone: doctorData.phone || '',
+        cpf: doctorData.cpf || '',
+        birthDate: doctorData.birthDate?.toString() || '',
+        specialty: doctorData.specialty || '',
+        rqe: doctorData.rqe || '',
+        crm: doctorData.crm || '',
+        biography: doctorData.biography || '',
+      };
+    } else {
+      throw new Error(`Tipo de usuário desconhecido: ${session.role}`);
+    }
+    
+    setUserProfile(profileData);
+    
+    // Inicializar campos editáveis
+    setName(profileData.name);
+    setEmail(profileData.email);
+    setPhone(profileData.phone);
+    setSex((profileData.sex as 'Male' | 'Female' | '') || '');
+    
+    if (profileData.birthDate) {
+      try {
+        setBirthDate(new Date(profileData.birthDate));
+      } catch (dateError) {
+        console.error('Erro ao processar data:', dateError);
+        setBirthDate(null);
+      }
+    }
+    
+  } catch (error: any) {
+    console.error('Erro ao carregar perfil:', error);
+    Alert.alert('Erro', `Não foi possível carregar seus dados: ${error.message || 'Erro desconhecido'}`);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Formatar telefone
   const formatPhone = (text: string) => {
@@ -149,7 +169,7 @@ export default function MyDetailsScreen() {
         setName(userProfile.name);
         setEmail(userProfile.email);
         setPhone(userProfile.phone);
-        setSex(userProfile.sex || '');
+        setSex((userProfile.sex as 'Male' | 'Female' | '') || '');
         setBirthDate(userProfile.birthDate ? new Date(userProfile.birthDate) : null);
       }
     }
@@ -477,7 +497,7 @@ export default function MyDetailsScreen() {
             {renderInfoField('Tipo de Conta', 
               session.role === 'client' ? 'Paciente' : 
               session.role === 'doctor' ? 'Médico' : 
-              session.role, 
+              session.role || '', 
               'shield'
             )}
           </View>
@@ -516,9 +536,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: HEADER_CONSTANTS.paddingHorizontal,
-    paddingTop: HEADER_CONSTANTS.paddingTop,
-    paddingBottom: HEADER_CONSTANTS.paddingBottom,
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'ios' ? 44 : 16,
+    paddingBottom: 10,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
@@ -527,7 +547,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
-    minHeight: HEADER_CONSTANTS.minHeight,
+    minHeight: 60,
   },
   backButton: {
     padding: SIZES.tiny,

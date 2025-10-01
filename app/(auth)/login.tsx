@@ -19,7 +19,6 @@ export default function LoginScreen() {
         setLoading(true);
         try {
             await login({ email, password });
-            router.replace('/(app)');
         } catch (error: any) {
             Alert.alert("Erro no Login", error.message || "Não foi possível entrar. Verifique suas credenciais.");
         } finally {

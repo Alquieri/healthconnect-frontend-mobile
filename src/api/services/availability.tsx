@@ -45,3 +45,13 @@ export async function deleteAvailability(availabilityId: string) {
     throw error;
   }
 }
+
+export async function createAvailabilityList(availabilities: AvailabilityDto.AvailabilityRegistration[]) {
+  try {
+    const response = await apiPrivate.post(`${AvailabilityPath.CREATE_AVAILABILITY_LIST}`, availabilities);
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao criar lista de disponibilidades:', error);
+    throw error;
+  }
+}

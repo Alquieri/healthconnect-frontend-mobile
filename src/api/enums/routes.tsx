@@ -24,7 +24,7 @@ export enum PatientPath {
 export enum DoctorPath {
     GET_DOCTOR_BY_ID = "/api/v1/doctor",
     GET_ALL_DOCTORS = "/api/v1/doctor/all",
-    GET_DOCTOR_BY_USER_ID = "/api/v1/doctor/user",
+    GET_DOCTOR_BY_USER_ID = "/api/v1/doctor/detail/by-userid",
     GET_DOCTOR_BY_RQE = "/api/v1/doctor/by-rqe",
     GET_DOCTOR_DETAIL_BY_ID = "/api/v1/doctor/detail",
     GET_DOCTORS_BY_SPECIALITY = "/api/v1/doctor/by-Speciality/all",
@@ -50,6 +50,7 @@ export enum AvailabilityPath {
     GET_AVAILABILITY_BY_ID = "/api/v1/availability",
     GET_ALL_BY_DOCTOR_ID = "/api/v1/availability/by-doctor",
     DELETE_AVAILABILITY = "/api/v1/availability",
+    CREATE_AVAILABILITY_LIST = "/api/v1/availability/bulk",
 }
 
 export enum AppointmentPath {
