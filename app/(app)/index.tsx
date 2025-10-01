@@ -9,7 +9,7 @@ import { NotificationsPopup, Notification } from '../../src/components/Notificat
 import { useAuth } from '../../src/context/AuthContext';
 import { getClientProfileByUserId } from '../../src/api/services/patient';
 import { getDoctorByIdDetail } from '../../src/api/services/doctor';
-
+import "../../src/components/SpecialtyGrid"
 // ✅ Notificações atualizadas com link correto para cadastro médico
 const initialNotifications: Notification[] = [
   { 

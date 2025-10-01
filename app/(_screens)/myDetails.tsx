@@ -97,7 +97,7 @@ export default function MyDetailsScreen() {
     } else if (session.role === 'doctor') {
       console.log(`Carregando perfil de médico para ID ${session.userId}`);
       const doctorData = await getDoctorByUserId(session.userId);
-      
+      console.log(`Carregando depois do get ${doctorData.name}`);
       if (!doctorData) {
         throw new Error('Dados do médico não encontrados');
       }

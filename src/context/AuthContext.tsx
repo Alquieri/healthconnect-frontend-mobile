@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useRouter, useSegments } from 'expo-router';
 import { jwtDecode } from 'jwt-decode';
 import { login as apiLogin, logout as apiLogout } from '../api/services/auth';
 import { AuthDto } from '../api/models/auth';
 import { saveToken, getToken, deleteToken } from '../api/services/secure-store.service';
 import { resetApiInstances } from '../api/api';
 
+// --- DEFINIÇÕES DE TIPO ---
 interface DecodedToken {
   sub: string;
   role: string | string[];
@@ -32,30 +32,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function useProtectedRoute(status: AuthStatus) {
-  const segments = useSegments();
-  const router = useRouter();
-
-  useEffect(() => {
-    const inProtectedGroup = segments[0] === '(patient)' || segments[0] === '(doctor)';
-
-    if (status === 'pending') {
-      return;
-    }
-
-    if (status === 'unauthenticated' && inProtectedGroup) {
-      console.log('[Auth] Acesso negado a rota protegida. Redirecionando para a home pública.');
-      router.replace('/(app)');
-    }
-  }, [status, segments]);
-}
-
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session>({ token: null, role: null, userId: null });
   const [status, setStatus] = useState<AuthStatus>('pending');
-  const router = useRouter();
-
-  useProtectedRoute(status);
 
   useEffect(() => {
     bootstrapAsync();
@@ -67,6 +46,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (storedToken) {
       try {
         const decodedToken: DecodedToken = jwtDecode(storedToken);
+        
+        // Lógica de prioridade de 'role' para consistência
         let userRole: string;
         if (Array.isArray(decodedToken.role)) {
           userRole = decodedToken.role.includes('doctor') ? 'doctor' : decodedToken.role[0];
@@ -78,16 +59,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setStatus('authenticated');
         resetApiInstances();
         console.log(`[AuthProvider] ✅ Sessão restaurada como '${userRole}'.`);
-
-        // ❌ REMOVA O BLOCO DE REDIRECIONAMENTO DAQUI ❌
-        // if (userRole === 'doctor') {
-        //   router.replace('/(doctor)');
-        // } else {
-        //   router.replace('/(patient)');
-        // }
-
       } catch (e) {
-        // ... (seu catch block)
+        console.error('[AuthProvider] ❌ Token guardado é inválido. Limpando sessão.', e);
+        await deleteToken();
+        setSession({ token: null, role: null, userId: null });
+        setStatus('unauthenticated');
+        resetApiInstances();
       }
     } else {
       setSession({ token: null, role: null, userId: null });
@@ -95,46 +72,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-
   const refreshAuth = async () => {
     console.log('[AuthProvider] 🔄 Refresh de autenticação...');
     await bootstrapAsync();
   };
 
   const login = async (loginData: AuthDto.LoginRequest) => {
-    setStatus('pending');
     try {
+      // Faz o login na API
       const response = await apiLogin(loginData);
+      // Salva o novo token
       await saveToken(response.token);
-      const decodedToken: DecodedToken = jwtDecode(response.token);
-
-      // ✅ CORREÇÃO 1: Lógica de prioridade de role
-      let userRole: string;
-      if (Array.isArray(decodedToken.role)) {
-        if (decodedToken.role.includes('doctor')) {
-          userRole = 'doctor';
-        } else {
-          userRole = decodedToken.role[0];
-        }
-      } else {
-        userRole = decodedToken.role;
-      }
-      
-      setSession({ token: response.token, role: userRole, userId: decodedToken.sub });
-      setStatus('authenticated');
-      resetApiInstances();
-      console.log(`[AuthProvider] ✅ Login como '${userRole}' realizado. Redirecionando...`);
-
-      if (userRole === 'doctor') {
-        router.replace('/(doctor)');
-      } else {
-        router.replace('/(patient)');
-      }
-
+      // Re-executa o bootstrap para decodificar o novo token e definir o estado.
+      // Isso mantém a lógica de definição de estado em um único lugar.
+      await bootstrapAsync();
     } catch (error) {
-      console.error('[AuthProvider] ❌ Erro no login:', error);
+      // Se o login falhar, força um logout completo para limpar qualquer estado inválido
       await forceLogout();
-      throw error;
+      console.error('[AuthProvider] ❌ Erro no login:', error);
+      throw error; // Lança o erro para a tela de login poder mostrá-lo
     }
   };
 
@@ -143,9 +99,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setSession({ token: null, role: null, userId: null });
     setStatus('unauthenticated');
     resetApiInstances();
-    
-    console.log('[Auth] Logout forçado. Redirecionando para a home pública.');
-    router.replace('/(app)'); 
+    console.log('[Auth] Logout forçado. Estado atualizado.');
   };
   
   const logout = async () => {

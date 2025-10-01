@@ -2,55 +2,62 @@
 import 'expo-dev-client';
 import React, { useEffect } from 'react';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
-import { SplashScreen, Stack } from 'expo-router';
+import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import Toast from 'react-native-toast-message';
 
-// Oculta a splash screen nativa
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
   const { status, session } = useAuth();
+  const router = useRouter();
+  const segments = useSegments();
 
   useEffect(() => {
-    // Mostra o app quando o status de autenticação for decidido
-    if (status !== 'pending') {
-      SplashScreen.hideAsync();
+    if (status === 'pending') {
+      return; // Não faz nada enquanto o status não for definido.
     }
-  }, [status]);
 
-  if (status === 'pending') {
-    return null; // A splash screen nativa continua visível
-  }
+    const inAuthGroup = segments[0] === '(auth)';
 
+    if (status === 'authenticated') {
+      const targetGroup = session.role === 'doctor' ? '(doctor)' : '(patient)';
+      if (segments[0] !== targetGroup) {
+        router.replace(`/${targetGroup}`);
+      }
+    } else if (status === 'unauthenticated') {
+      if (!inAuthGroup && segments[0] !== '(app)') {
+        router.replace('/(app)');
+      }
+    }
+  }, [status, session.role, segments, router]);
+  
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      {status === 'authenticated' ? (
-        // Usuário LOGADO
-        <>
-          {session.role === 'doctor' ? (
-            // Se for médico, mostra o grupo do médico
-            <Stack.Screen name="(doctor)" />
-          ) : (
-            // Para outros roles (paciente, admin), mostra o grupo do paciente
-            <Stack.Screen name="(patient)" />
-          )}
-        </>
-      ) : (
-        // Usuário DESLOGADO
-        // Mostra o grupo público (app)
-        <Stack.Screen name="(app)" />
-      )}
-      
-      {/* O grupo (auth) fica sempre disponível como um modal */}
+      <Stack.Screen name="(app)" />
+      <Stack.Screen name="(patient)" />
+      <Stack.Screen name="(doctor)" />
       <Stack.Screen name="(auth)" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }
 
+function Main() {
+    const { status } = useAuth();
+
+    useEffect(() => {
+        if (status !== 'pending') {
+            SplashScreen.hideAsync();
+        }
+    }, [status]);
+
+    return <RootLayoutNav />;
+}
+
+
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <RootLayoutNav />
+      <Main />
       <Toast />
     </AuthProvider>
   );
