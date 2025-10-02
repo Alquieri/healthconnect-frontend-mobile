@@ -69,6 +69,7 @@ export async function getAllAppointmentsByDoctorIdSummary(doctorId: string): Pro
     const response = await apiPrivate.get<AppointmentDto.AppointmentSummary[]>(
       `${AppointmentPath.GET_ALL_APPOINTMENTS_BY_DOCTOR_ID_SUMMARY}/${doctorId}`
     );
+    console.log('Resumo dos agendamentos do médico:', response.data);
     return response.data;
   } catch (error) {
     console.error('Erro ao obter resumo dos agendamentos do médico:', error);
