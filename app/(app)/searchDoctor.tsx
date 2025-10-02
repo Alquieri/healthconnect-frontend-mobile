@@ -6,12 +6,13 @@ import {
   TextInput,
   FlatList,
   TouchableOpacity,
-  SafeAreaView,
+  
   Image,
   ActivityIndicator,
   Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons';
 import { getAllDoctors, getAllDoctorsBySpeciality } from '../../src/api/services/doctor';
 import { getAllSpecialities } from '../../src/api/services/speciality';

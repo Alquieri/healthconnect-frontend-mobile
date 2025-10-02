@@ -5,11 +5,11 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   ScrollView, 
-  SafeAreaView, 
   Platform, 
   KeyboardAvoidingView,
   ActivityIndicator 
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { Link, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';

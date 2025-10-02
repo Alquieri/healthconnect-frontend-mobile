@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, SafeAreaView, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useAuth } from '../../src/context/AuthContext';
 import { useRouter, Link } from 'expo-router';
 import { CustomInput } from '../../src/components/CustomInput';
 import { CustomButton } from '../../src/components/CustomButton';
 import { ResponsiveContainer } from '../../src/components/ResponsiveContainer';
 import { COLORS, SIZES } from '../../src/constants/theme';
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 export default function LoginScreen() {
     const [email, setEmail] = useState('');

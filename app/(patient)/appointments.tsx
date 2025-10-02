@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   Image,
   ActivityIndicator,
   Alert,
@@ -21,6 +20,7 @@ import { createAppointment, getAllAppointmentsByDoctorIdSummary } from '../../sr
 import { AvailabilityDto } from '../../src/api/models/availability';
 import { AppointmentDto } from '../../src/api/models/appointment';
 import { useAuth } from '../../src/context/AuthContext';
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 interface Doctor {
   id: string;

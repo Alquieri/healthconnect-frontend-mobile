@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Image, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import { COLORS, SIZES } from '../../src/constants/theme';
 import { getClientProfileByUserId } from '../../src/api/services/patient';
 import { ResponsiveContainer } from '../../src/components/ResponsiveContainer';
-
+import { SafeAreaView } from 'react-native-safe-area-context'
 interface PatientProfile {
   id: string;
   name: string;
