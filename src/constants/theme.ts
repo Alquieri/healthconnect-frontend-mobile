@@ -40,10 +40,10 @@ const DEFAULT_THEME = {
 
 const DOCTOR_THEME = {
   ...BASE_COLORS,
-  primary: '#00A651',
+  primary: '#0D9488',
   secondary: '#666666',
-  primaryLight: '#00A65120',
-  primaryDark: '#008344',
+  primaryLight: '#32968dff',
+  primaryDark: '#045c54ff',
 };
 
 export const getTheme = (userType: 'patient' | 'doctor' | 'default' = 'default') => {
