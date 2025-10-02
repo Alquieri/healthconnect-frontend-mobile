@@ -8,26 +8,41 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 const { width } = Dimensions.get('window');
 const PAGE_WIDTH = width;
 
-const iconMapping: Record<string, keyof typeof MaterialCommunityIcons.glyphMap | 'custom'> = {
-  'Cardiologista': 'heart-outline',
-  'Psicólogo': 'head-outline',
-  'Psiquiatra': 'head-question-outline',
-  'Dermatologista': 'content-cut',
-  'Neurologista': 'head-cog-outline',
-  'Clínico Geral': 'doctor',
-  'Clínica Geral': 'doctor',
-  'Pediatra': 'custom', // ✅ Marca como customizado
-  'Oftalmologista': 'eye-outline',
-  'Ginecologista': 'gender-female',
-  'Ortopedista': 'bone',
-  'Urologista': 'human-male-female',
-  'Endocrinologia': 'diabetes',
-  'Default': 'medical-bag'
+// ✅ Mapeamento completo com TODAS as imagens personalizadas
+const customImageMapping: Record<string, any> = {
+  'Cardiologista': require('../../assets/icons-home/IconCardiologista.png'),
+  'Dermatologista': require('../../assets/icons-home/IconDermatologista.png'),
+  'Ginecologista': require('../../assets/icons-home/IconGinecologista.png'),
+  'Neurologista': require('../../assets/icons-home/IconNeurologista.png'),
+  'Oftalmologista': require('../../assets/icons-home/IconOftamologista.png'),
+  'Ortopedista': require('../../assets/icons-home/IconOrtopedista.png'),
+  'Otorrinolaringologista': require('../../assets/icons-home/Iconotorrinolarinologista.png'),
+  'Pediatra': require('../../assets/icons-home/IconPediatra.png'),
+  'Psicólogo': require('../../assets/icons-home/IconPsicologo.png'),
+  'Psiquiatra': require('../../assets/icons-home/IconPsiquiatra.png'),
+  'Urologista': require('../../assets/icons-home/IconUrologista.png'),
 };
 
-// ✅ Adicionar mapeamento de imagens personalizadas
-const customImageMapping: Record<string, any> = {
-  'Pediatra': require('../../assets/icons-home/IconPediatra.png'),
+const iconMapping: Record<string, keyof typeof MaterialCommunityIcons.glyphMap | 'custom'> = {
+  'Cardiologista': 'custom',
+  'Dermatologista': 'custom',
+  'Ginecologista': 'custom',
+  'Neurologista': 'custom',
+  'Oftalmologista': 'custom',
+  'Ortopedista': 'custom',
+  'Otorrinolaringologista': 'custom',
+  'Pediatra': 'custom',
+  'Psicólogo': 'custom',
+  'Psiquiatra': 'custom',
+  'Urologista': 'custom',
+  
+  // Especialidades que usam ícones do MaterialCommunityIcons
+  'Clínico Geral': 'doctor',
+  'Clínica Geral': 'doctor',
+  'Endocrinologia': 'diabetes',
+  'Fisioterapia': 'human-handsup',
+  'Nutrição': 'food-apple',
+  'Default': 'medical-bag'
 };
 
 export type SpecialtyItem = {
@@ -73,14 +88,20 @@ export function SpecialtyGrid() {
         console.error('Erro ao carregar especialidades:', err);
         setError('Não foi possível carregar as especialidades');
         
-        // ✅ Fallback com imagem personalizada
+        // ✅ Fallback com TODAS as imagens personalizadas disponíveis
         const fallbackSpecialties: SpecialtyItem[] = [
-          { id: '1', name: 'Cardiologista', icon: 'heart-outline', customImage: null },
-          { id: '2', name: 'Psicólogo', icon: 'head-outline', customImage: null }, 
-          { id: '3', name: 'Dermatologista', icon: 'content-cut', customImage: null },
-          { id: '4', name: 'Neurologista', icon: 'head-cog-outline', customImage: null },
-          { id: '5', name: 'Clínico Geral', icon: 'doctor', customImage: null },
-          { id: '6', name: 'Pediatra', icon: 'custom', customImage: require('../../assets/icons-home/IconPediatra.png') },
+          { id: '1', name: 'Cardiologista', icon: 'custom', customImage: require('../../assets/icons-home/IconCardiologista.png') },
+          { id: '2', name: 'Dermatologista', icon: 'custom', customImage: require('../../assets/icons-home/IconDermatologista.png') },
+          { id: '3', name: 'Ginecologista', icon: 'custom', customImage: require('../../assets/icons-home/IconGinecologista.png') },
+          { id: '4', name: 'Neurologista', icon: 'custom', customImage: require('../../assets/icons-home/IconNeurologista.png') },
+          { id: '5', name: 'Oftalmologista', icon: 'custom', customImage: require('../../assets/icons-home/IconOftamologista.png') },
+          { id: '6', name: 'Ortopedista', icon: 'custom', customImage: require('../../assets/icons-home/IconOrtopedista.png') },
+          { id: '7', name: 'Otorrinolaringologista', icon: 'custom', customImage: require('../../assets/icons-home/Iconotorrinolarinologista.png') },
+          { id: '8', name: 'Pediatra', icon: 'custom', customImage: require('../../assets/icons-home/IconPediatra.png') },
+          { id: '9', name: 'Psicólogo', icon: 'custom', customImage: require('../../assets/icons-home/IconPsicologo.png') },
+          { id: '10', name: 'Psiquiatra', icon: 'custom', customImage: require('../../assets/icons-home/IconPsiquiatra.png') },
+          { id: '11', name: 'Urologista', icon: 'custom', customImage: require('../../assets/icons-home/IconUrologista.png') },
+          { id: '12', name: 'Clínico Geral', icon: 'doctor', customImage: null },
         ];
         setSpecialties(fallbackSpecialties);
       } finally {
