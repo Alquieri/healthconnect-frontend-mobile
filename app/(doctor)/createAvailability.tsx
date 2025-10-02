@@ -466,9 +466,6 @@ export default function CreateAvailabilityScreen() {
             Toque nos horários que você estará disponível (intervalos de {consultationDuration} minutos)
           </Text>
 
-         
-
-          {/* ✅ Indicador de carregamento de conflitos */}
           {loadingConflicts && (
             <View style={styles.loadingConflicts}>
               <ActivityIndicator size="small" color={COLORS.primary} />
@@ -476,7 +473,6 @@ export default function CreateAvailabilityScreen() {
             </View>
           )}
 
-          {/* ✅ Legenda de cores */}
           <View style={styles.legend}>
             <View style={styles.legendItem}>
               <View style={[styles.legendColor, styles.legendAvailable]} />
