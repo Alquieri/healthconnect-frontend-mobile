@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   Image,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,8 +17,9 @@ import CustomButton from '../../src/components/CustomButton';
 import { COLORS, SIZES } from '../../src/constants/theme';
 import { HEADER_CONSTANTS } from '../../src/constants/layout';
 import { getAllAvailabilityByDoctorId } from '../../src/api/services/availability';
-import { createAppointment } from '../../src/api/services/appointment';
+import { createAppointment, getAllAppointmentsByDoctorIdSummary } from '../../src/api/services/appointment';
 import { AvailabilityDto } from '../../src/api/models/availability';
+import { AppointmentDto } from '../../src/api/models/appointment';
 import { useAuth } from '../../src/context/AuthContext';
 
 interface Doctor {
@@ -34,6 +36,7 @@ interface TimeSlot {
   available: boolean;
   availabilityId: string;
   durationMinutes: number;
+  isBooked?: boolean;
 }
 
 interface DaySchedule {
@@ -58,7 +61,7 @@ interface MonthSchedule {
 export default function AppointmentsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { session } = useAuth();
+  const { session, isAuthenticated, status } = useAuth();
   
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string>('');
@@ -67,26 +70,105 @@ export default function AppointmentsScreen() {
   const [monthsSchedule, setMonthsSchedule] = useState<MonthSchedule[]>([]);
   const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
   const [bookingAppointment, setBookingAppointment] = useState(false);
+  const [bookedAppointments, setBookedAppointments] = useState<AppointmentDto.AppointmentSummary[]>([]);
 
-  const processAvailabilityData = (availabilities: AvailabilityDto.AvailabilitySummary[]): MonthSchedule[] => {
+  // ✅ Verificação de autenticação no início
+  useEffect(() => {
+    console.log('[Appointments] 🔐 Status de autenticação:', { status, isAuthenticated, hasSession: !!session.userId });
+    
+    if (status === 'pending') {
+      console.log('[Appointments] ⏳ Aguardando verificação de autenticação...');
+      return;
+    }
+
+    if (status === 'unauthenticated' || !isAuthenticated) {
+      console.log('[Appointments] ❌ Usuário não autenticado - redirecionando para login');
+      Alert.alert(
+        'Acesso Restrito',
+        'Você precisa estar logado para agendar consultas.',
+        [
+          {
+            text: 'Fazer Login',
+            onPress: () => router.replace('/(auth)/login')
+          },
+          {
+            text: 'Voltar',
+            style: 'cancel',
+            onPress: () => router.replace('/(app)/searchDoctor')
+          }
+        ]
+      );
+      return;
+    }
+
+    // ✅ Se autenticado, carregar dados
+    loadDoctorAndSchedule();
+  }, [status, isAuthenticated, session.userId]);
+
+  // ✅ Função CORRIGIDA para verificar se um horário específico está agendado
+  const isTimeSlotBooked = useCallback((availabilityId: string, appointments: AppointmentDto.AppointmentSummary[]): boolean => {
+    console.log('[Appointments] 🔍 Verificando se availability está agendada:', availabilityId);
+    console.log('[Appointments] 📋 Total de appointments para verificar:', appointments.length);
+    
+    const isBooked = appointments.some(appointment => {
+      const matches = appointment.availabilityId === availabilityId;
+      const isActive = appointment.status.toLowerCase() !== 'cancelled' && 
+                      appointment.status.toLowerCase() !== 'cancelado';
+      
+      console.log('[Appointments] 🔍 Verificando appointment:', {
+        appointmentId: appointment.id,
+        availabilityId: appointment.availabilityId,
+        status: appointment.status,
+        matches,
+        isActive,
+        result: matches && isActive
+      });
+      
+      return matches && isActive;
+    });
+
+    console.log('[Appointments] 🔍 Resultado final - isBooked:', isBooked);
+    return isBooked;
+  }, []);
+
+  const processAvailabilityData = useCallback((
+    availabilities: AvailabilityDto.AvailabilitySummary[], 
+    appointments: AppointmentDto.AppointmentSummary[]
+  ): MonthSchedule[] => {
+    console.log('[Appointments] 🔄 === INICIANDO PROCESSAMENTO DE DADOS ===');
+    
     // ✅ Usar data local para comparação
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
     console.log('[Appointments] 📅 Data de hoje para filtro:', today.toISOString());
     console.log('[Appointments] 📊 Total de availabilities recebidas:', availabilities.length);
+    console.log('[Appointments] 📋 Total de appointments recebidos:', appointments.length);
+    
+    // ✅ Log detalhado dos appointments
+    console.log('[Appointments] 📋 APPOINTMENTS DETALHADOS:');
+    appointments.forEach((appointment, index) => {
+      console.log(`[Appointments] 📋 Appointment ${index + 1}:`, {
+        id: appointment.id,
+        availabilityId: appointment.availabilityId,
+        status: appointment.status,
+        date: appointment.appointmentDate,
+        doctorName: appointment.doctorName
+      });
+    });
     
     const groupedByDate = availabilities.reduce((acc, availability) => {
       const slotDate = new Date(availability.slotDateTime);
       const slotDateOnly = new Date(slotDate.getFullYear(), slotDate.getMonth(), slotDate.getDate());
       const dateKey = slotDateOnly.toISOString().split('T')[0];
       
-      console.log('[Appointments] 🔍 Processando slot:', {
+      console.log('[Appointments] 🔍 Processando availability:', {
+        availabilityId: availability.id,
         original: availability.slotDateTime,
         slotDate: slotDate.toISOString(),
         slotDateOnly: slotDateOnly.toISOString(),
         dateKey,
-        month: slotDate.getMonth() + 1, // +1 para mostrar mês humano
+        month: slotDate.getMonth() + 1,
         isValid: slotDateOnly >= today
       });
       
@@ -115,12 +197,17 @@ export default function AppointmentsScreen() {
       const date = new Date(dateKey + 'T00:00:00');
       const isToday = date.getTime() === today.getTime();
       
+      console.log('[Appointments] 📅 Processando dia:', dateKey, 'Total availabilities:', dayAvailabilities.length);
+      
       const afternoonSlots: TimeSlot[] = [];
       const eveningSlots: TimeSlot[] = [];
       
-      dayAvailabilities.forEach(availability => {
+      dayAvailabilities.forEach((availability, index) => {
         const slotDate = new Date(availability.slotDateTime);
         const hour = slotDate.getHours();
+        
+        // ✅ Verificar se este horário já foi agendado passando os appointments como parâmetro
+        const isBooked = isTimeSlotBooked(availability.id, appointments);
         
         const timeSlot: TimeSlot = {
           id: availability.id,
@@ -128,10 +215,19 @@ export default function AppointmentsScreen() {
             hour: '2-digit', 
             minute: '2-digit' 
           }),
-          available: true,
+          available: !isBooked, // ✅ Não disponível se já foi agendado
           availabilityId: availability.id,
-          durationMinutes: availability.durationMinutes
+          durationMinutes: availability.durationMinutes,
+          isBooked: isBooked // ✅ Marcar se está agendado
         };
+        
+        console.log(`[Appointments] 🔍 TimeSlot ${index + 1} criado:`, {
+          availabilityId: availability.id,
+          time: timeSlot.time,
+          isBooked,
+          available: timeSlot.available,
+          hour
+        });
         
         // ✅ Classificação manhã/tarde/noite
         if (hour >= 6 && hour < 12) {
@@ -146,6 +242,17 @@ export default function AppointmentsScreen() {
       const sortSlots = (slots: TimeSlot[]) => 
         slots.sort((a, b) => a.time.localeCompare(b.time));
       
+      // ✅ Considerar dia disponível se houver pelo menos um slot disponível
+      const hasAvailableSlots = [...afternoonSlots, ...eveningSlots].some(slot => slot.available);
+      
+      console.log('[Appointments] 📊 Resumo do dia:', {
+        date: dateKey,
+        totalSlots: afternoonSlots.length + eveningSlots.length,
+        availableSlots: [...afternoonSlots, ...eveningSlots].filter(slot => slot.available).length,
+        bookedSlots: [...afternoonSlots, ...eveningSlots].filter(slot => slot.isBooked).length,
+        hasAvailableSlots
+      });
+      
       const daySchedule: DaySchedule = {
         date: dateKey,
         displayDate: date.toLocaleDateString('pt-BR'),
@@ -153,7 +260,7 @@ export default function AppointmentsScreen() {
         dayNumber: date.getDate(),
         month: monthNames[date.getMonth()],
         isToday,
-        available: afternoonSlots.length > 0 || eveningSlots.length > 0,
+        available: hasAvailableSlots, // ✅ Só disponível se tiver slots livres
         afternoonSlots: sortSlots(afternoonSlots),
         eveningSlots: sortSlots(eveningSlots)
       };
@@ -197,16 +304,25 @@ export default function AppointmentsScreen() {
       daysCount: m.days.length
     })));
     
+    console.log('[Appointments] 🔄 === FIM DO PROCESSAMENTO DE DADOS ===');
+    
     return monthsSchedule;
-  };
+  }, [isTimeSlotBooked]);
 
-  useEffect(() => {
-    loadDoctorAndSchedule();
-  }, []);
-
-  const loadDoctorAndSchedule = async () => {
+  const loadDoctorAndSchedule = useCallback(async () => {
     try {
       setLoading(true);
+      
+      // ✅ Verificação de autenticação
+      if (!isAuthenticated || !session.userId || !session.profileId) {
+        console.log('[Appointments] ❌ Usuário não autenticado adequadamente');
+        Alert.alert(
+          'Sessão Expirada',
+          'Sua sessão expirou. Por favor, faça login novamente.',
+          [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }]
+        );
+        return;
+      }
       
       // ✅ Verificar se o doctorId foi passado
       const doctorId = params.doctorId as string;
@@ -221,10 +337,16 @@ export default function AppointmentsScreen() {
       }
 
       console.log('[Appointments] 🩺 Carregando horários para o médico ID:', doctorId);
+      console.log('[Appointments] 👤 Usuário logado:', session.userId);
 
-      // ✅ Buscar disponibilidades da API
-      const availabilities = await getAllAvailabilityByDoctorId(doctorId); 
-      console.log('[Appointments] 📊 RESPOSTA BRUTA DA API:', JSON.stringify(availabilities, null, 2));
+      // ✅ Buscar disponibilidades e agendamentos em paralelo
+      const [availabilities, appointments] = await Promise.all([
+        getAllAvailabilityByDoctorId(doctorId),
+        getAllAppointmentsByDoctorIdSummary(doctorId)
+      ]);
+
+      console.log('[Appointments] 📊 RESPOSTA BRUTA DA API - Availabilities:', JSON.stringify(availabilities, null, 2));
+      console.log('[Appointments] 📋 RESPOSTA BRUTA DA API - Appointments:', JSON.stringify(appointments, null, 2));
 
       // ✅ Verificar se há horários disponíveis
       if (!availabilities || availabilities.length === 0) {
@@ -236,6 +358,7 @@ export default function AppointmentsScreen() {
         });
         setMonthsSchedule([]);
         setDoctor(null);
+        setBookedAppointments([]);
         return;
       }
 
@@ -244,16 +367,19 @@ export default function AppointmentsScreen() {
       const doctorInfo: Doctor = {
         id: firstAvailability.doctorId,
         name: firstAvailability.name,
-        specialty: firstAvailability.specialities[0]?.specialityName || 'Especialidade não informada',
-        rqe: firstAvailability.specialities[0]?.rqeNumber || 'RQE não informado',
+        specialty: firstAvailability.specialty,
+        rqe: firstAvailability.rqe,
         image: 'https://via.placeholder.com/80x80'
       };
 
       console.log('[Appointments] 👨‍⚕️ Informações do médico extraídas:', doctorInfo);
       setDoctor(doctorInfo);
       
-      // ✅ Processar disponibilidades em cronograma por mês
-      const processedMonthsSchedule = processAvailabilityData(availabilities);
+      // ✅ IMPORTANTE: Armazenar agendamentos no estado
+      setBookedAppointments(appointments || []);
+      
+      // ✅ Processar disponibilidades com informações de agendamento USANDO OS DADOS DIRETOS
+      const processedMonthsSchedule = processAvailabilityData(availabilities, appointments || []);
       setMonthsSchedule(processedMonthsSchedule);
       
       // ✅ Selecionar primeiro mês e primeiro dia disponível
@@ -269,6 +395,18 @@ export default function AppointmentsScreen() {
       
     } catch (error: any) {
       console.error('[Appointments] ❌ Erro ao carregar dados:', error);
+      
+      // ✅ Tratar erro de autenticação especificamente
+      if (error.response?.status === 401) {
+        console.log('[Appointments] 🔐 Erro de autenticação - redirecionando para login');
+        Alert.alert(
+          'Sessão Expirada',
+          'Sua sessão expirou. Por favor, faça login novamente para agendar consultas.',
+          [{ text: 'Fazer Login', onPress: () => router.replace('/(auth)/login') }]
+        );
+        return;
+      }
+      
       Toast.show({
         type: 'error',
         text1: 'Erro ao carregar horários',
@@ -281,7 +419,7 @@ export default function AppointmentsScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAuthenticated, session.userId, session.profileId, params.doctorId, processAvailabilityData, selectedDate]);
 
   const handleBookAppointment = async () => {
     if (!selectedTimeSlot) {
@@ -290,6 +428,28 @@ export default function AppointmentsScreen() {
         text1: 'Horário não selecionado',
         text2: 'Por favor, selecione um horário para agendar'
       });
+      return;
+    }
+
+    // ✅ Verificar se o horário ainda está disponível usando os dados atuais
+    const currentIsBooked = isTimeSlotBooked(selectedTimeSlot.availabilityId, bookedAppointments);
+    if (!selectedTimeSlot.available || selectedTimeSlot.isBooked || currentIsBooked) {
+      Toast.show({
+        type: 'error',
+        text1: 'Horário não disponível',
+        text2: 'Este horário já foi agendado por outro paciente'
+      });
+      setSelectedTimeSlot(null); // Limpar seleção
+      return;
+    }
+
+    // ✅ Verificação de autenticação antes de agendar
+    if (!isAuthenticated || !session.profileId) {
+      Alert.alert(
+        'Sessão Expirada',
+        'Sua sessão expirou. Por favor, faça login novamente.',
+        [{ text: 'Fazer Login', onPress: () => router.replace('/(auth)/login') }]
+      );
       return;
     }
 
@@ -316,12 +476,38 @@ export default function AppointmentsScreen() {
       setSelectedTimeSlot(null);
       setSelectedDate('');
       
+      // ✅ Recarregar dados para atualizar disponibilidade
+      await loadDoctorAndSchedule();
+      
       setTimeout(() => {
         router.replace('/(app)/searchDoctor');
       }, 3000);
 
     } catch (error: any) {
       console.error('[Appointments] ❌ Erro ao criar agendamento:', error);
+      
+      // ✅ Tratar erro de autenticação no agendamento
+      if (error.response?.status === 401) {
+        Alert.alert(
+          'Sessão Expirada',
+          'Sua sessão expirou durante o agendamento. Faça login novamente.',
+          [{ text: 'Fazer Login', onPress: () => router.replace('/(auth)/login') }]
+        );
+        return;
+      }
+      
+      // ✅ Se for erro de horário já agendado, recarregar dados
+      if (error.response?.status === 400 || error.message?.includes('já foi agendado')) {
+        Toast.show({
+          type: 'error',
+          text1: 'Horário já foi agendado',
+          text2: 'Este horário foi agendado por outro paciente enquanto você estava selecionando.'
+        });
+        // Recarregar dados para atualizar interface
+        await loadDoctorAndSchedule();
+        return;
+      }
+      
       Toast.show({
         type: 'error',
         text1: 'Erro no agendamento',
@@ -365,15 +551,28 @@ export default function AppointmentsScreen() {
       style={[
         styles.timeSlot,
         !slot.available && styles.timeSlotDisabled,
+        slot.isBooked && styles.timeSlotBooked, // ✅ Novo estilo para agendados
         selectedTimeSlot?.id === slot.id && styles.timeSlotSelected
       ]}
-      onPress={() => slot.available && setSelectedTimeSlot(slot)}
-      disabled={!slot.available}
+      onPress={() => {
+        if (slot.available && !slot.isBooked) {
+          setSelectedTimeSlot(slot);
+        } else {
+          // ✅ Mostrar feedback quando tentar selecionar horário ocupado
+          Toast.show({
+            type: 'info',
+            text1: 'Horário não disponível',
+            text2: slot.isBooked ? 'Este horário já foi agendado' : 'Horário não disponível'
+          });
+        }
+      }}
+      disabled={!slot.available || slot.isBooked}
       activeOpacity={0.7}
     >
       <Text style={[
         styles.timeSlotText,
         !slot.available && styles.timeSlotTextDisabled,
+        slot.isBooked && styles.timeSlotTextBooked, // ✅ Novo estilo para texto
         selectedTimeSlot?.id === slot.id && styles.timeSlotTextSelected
       ]}>
         {slot.time}
@@ -381,13 +580,34 @@ export default function AppointmentsScreen() {
       <Text style={[
         styles.timeSlotDuration,
         !slot.available && styles.timeSlotTextDisabled,
+        slot.isBooked && styles.timeSlotTextBooked, // ✅ Novo estilo para duração
         selectedTimeSlot?.id === slot.id && styles.timeSlotTextSelected
       ]}>
         {slot.durationMinutes}min
       </Text>
+      
+      {/* ✅ Ícone para horários agendados */}
+      {slot.isBooked && (
+        <View style={styles.bookedIndicator}>
+          <Ionicons name="person" size={12} color="#666" />
+        </View>
+      )}
     </TouchableOpacity>
   );
 
+  // ✅ Estado de carregamento de autenticação
+  if (status === 'pending') {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>Verificando autenticação...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ✅ Estado de loading de dados
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -544,6 +764,24 @@ export default function AppointmentsScreen() {
           </View>
         )}
 
+        {/* ✅ Legenda de Status */}
+        {currentSchedule && currentSchedule.available && (
+          <View style={styles.legendContainer}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: COLORS.white, borderColor: COLORS.border, borderWidth: 2 }]} />
+              <Text style={styles.legendText}>Disponível</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: '#E0E0E0' }]} />
+              <Text style={styles.legendText}>Agendado</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: COLORS.primary }]} />
+              <Text style={styles.legendText}>Selecionado</Text>
+            </View>
+          </View>
+        )}
+
         {/* ✅ Horários Disponíveis */}
         {currentSchedule && currentSchedule.available && (
           <>
@@ -551,7 +789,7 @@ export default function AppointmentsScreen() {
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>
                   <Ionicons name="sunny-outline" size={16} color={COLORS.primary} /> 
-                  {' '}Manhã/Tarde • {currentSchedule.afternoonSlots.length} horários
+                  {' '}Manhã/Tarde • {currentSchedule.afternoonSlots.filter(slot => slot.available).length}/{currentSchedule.afternoonSlots.length} disponíveis
                 </Text>
                 <View style={styles.timeSlotsGrid}>
                   {currentSchedule.afternoonSlots.map(renderTimeSlot)}
@@ -563,7 +801,7 @@ export default function AppointmentsScreen() {
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>
                   <Ionicons name="moon-outline" size={16} color={COLORS.primary} />
-                  {' '}Noite • {currentSchedule.eveningSlots.length} horários
+                  {' '}Noite • {currentSchedule.eveningSlots.filter(slot => slot.available).length}/{currentSchedule.eveningSlots.length} disponíveis
                 </Text>
                 <View style={styles.timeSlotsGrid}>
                   {currentSchedule.eveningSlots.map(renderTimeSlot)}
@@ -621,7 +859,7 @@ export default function AppointmentsScreen() {
           <CustomButton
             title={bookingAppointment ? 'Confirmando Agendamento...' : 'Confirmar Agendamento'}
             onPress={handleBookAppointment}
-            disabled={!selectedTimeSlot || bookingAppointment}
+            disabled={!selectedTimeSlot || bookingAppointment || selectedTimeSlot?.isBooked}
           />
         </View>
       )}
@@ -741,7 +979,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  // ✅ Novos estilos para navegação de meses
   monthNavigation: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -879,6 +1116,35 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     marginLeft: 8,
   },
+  // ✅ Nova seção de legenda
+  legendContainer: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  legendDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 6,
+  },
+  legendText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: '500',
+  },
   timeSlotsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -899,10 +1165,17 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
+    position: 'relative', // ✅ Para posicionar o ícone
   },
   timeSlotDisabled: {
     backgroundColor: '#F5F5F5',
     borderColor: '#E0E0E0',
+    elevation: 0,
+  },
+  // ✅ Novo estilo para horários agendados
+  timeSlotBooked: {
+    backgroundColor: '#E0E0E0',
+    borderColor: '#BDBDBD',
     elevation: 0,
   },
   timeSlotSelected: {
@@ -923,9 +1196,22 @@ const styles = StyleSheet.create({
   timeSlotTextDisabled: {
     color: COLORS.placeholder,
   },
+  // ✅ Novo estilo para texto de horários agendados
+  timeSlotTextBooked: {
+    color: '#666666',
+  },
   timeSlotTextSelected: {
     color: COLORS.white,
     fontWeight: '600',
+  },
+  // ✅ Indicador para horários agendados
+  bookedIndicator: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 8,
+    padding: 2,
   },
   appointmentSummary: {
     backgroundColor: COLORS.white,

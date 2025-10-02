@@ -16,4 +16,14 @@ export namespace AppointmentDto {
     doctorName: string;
     clientName: string;
   }
+
+  export interface AppointmentSummary {
+    id: string;
+    doctorId: string;
+    availabilityId: string;
+    appointmentDate: Date;
+    duration: number;
+    status: string;
+    doctorName: string;
+  }
 }

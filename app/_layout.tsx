@@ -1,6 +1,8 @@
-// app/_layout.tsx
 import 'expo-dev-client';
 import React, { useEffect } from 'react';
+import { BackHandler, Platform } from 'react-native'; 
+import { StatusBar } from 'expo-status-bar';
+
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import Toast from 'react-native-toast-message';
@@ -14,7 +16,7 @@ function RootLayoutNav() {
 
   useEffect(() => {
     if (status === 'pending') {
-      return; // Não faz nada enquanto o status não for definido.
+      return;
     }
 
     const inAuthGroup = segments[0] === '(auth)';
@@ -50,6 +52,22 @@ function Main() {
         }
     }, [status]);
 
+    useEffect(() => {
+        const onBackPress = () => {
+            return true; 
+        };
+
+        if (Platform.OS === 'android') {
+            BackHandler.addEventListener('hardwareBackPress', onBackPress);
+        }
+
+        return () => {
+            if (Platform.OS === 'android') {
+                BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+            }
+        };
+    }, []); 
+
     return <RootLayoutNav />;
 }
 
@@ -57,6 +75,7 @@ function Main() {
 export default function RootLayout() {
   return (
     <AuthProvider>
+      <StatusBar hidden />
       <Main />
       <Toast />
     </AuthProvider>

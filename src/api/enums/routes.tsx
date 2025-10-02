@@ -58,7 +58,9 @@ export enum AppointmentPath {
     GET_APPOINTMENT_BY_ID = "/api/v1/appointment",
     GET_APPOINTMENTS_BY_DOCTOR_ID = "/api/v1/appointment/by-doctor",
     GET_APPOINTMENTS_BY_PATIENT_ID = "/api/v1/appointment/by-client",
+    GET_ALL_APPOINTMENTS_BY_DOCTOR_ID_SUMMARY = "/api/v1/appointment/summary/doctor",
     UPDATE_APPOINTMENT = "/api/v1/appointment",
+
 }
 
 export enum SpecialityPath {
