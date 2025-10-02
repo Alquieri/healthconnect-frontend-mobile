@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { COLORSDOCTOR, SIZES } from "../constants/theme";
-import  Ionicons  from '@expo/vector-icons';
+import { DOCTOR_THEME, SIZES } from "../constants/theme"; // ✅ Corrigido
+import { Ionicons } from '@expo/vector-icons'; // ✅ Corrigido import
 import { SearchBar } from './SearchBar';
-
 
 interface HomeHeaderProps {
   userName: string;
   onNotificationsPress: () => void;
-  hasUnreadNotifications?: boolean;
+  hasUnreadNotifications: boolean;
 }
 
 export function HeaderDoctor({ userName, onNotificationsPress, hasUnreadNotifications }: HomeHeaderProps) {
@@ -35,7 +34,7 @@ export function HeaderDoctor({ userName, onNotificationsPress, hasUnreadNotifica
           onPress={onNotificationsPress}
           style={styles.notificationButton}
         >
-          <Ionicons name="notifications-outline" size={24} color={COLORSDOCTOR.white} />
+          <Ionicons name="notifications-outline" size={24} color={DOCTOR_THEME.white} />
           {hasUnreadNotifications && <View style={styles.notificationBadge} />}
         </TouchableOpacity>
       </View>
@@ -44,7 +43,8 @@ export function HeaderDoctor({ userName, onNotificationsPress, hasUnreadNotifica
         value={searchQuery}
         onChangeText={setSearchQuery}
         onSubmit={handleSearch}
-        placeholder="Busque por pacientes ou agendamentos..."
+        placeholder="Buscar pacientes, agendamentos..."
+        userType="doctor"
       />
     </View>
   );
@@ -52,7 +52,7 @@ export function HeaderDoctor({ userName, onNotificationsPress, hasUnreadNotifica
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: COLORSDOCTOR.primary,
+    backgroundColor: DOCTOR_THEME.primary, // ✅ Corrigido
     paddingTop: 50,
     paddingHorizontal: SIZES.containerPadding,
     paddingBottom: SIZES.medium,
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: COLORSDOCTOR .white,
+    color: DOCTOR_THEME.white, // ✅ Corrigido
   },
   notificationButton: {
     position: 'relative',
@@ -82,20 +82,19 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: '#ff3b30',
     borderWidth: 1.5,
-    borderColor: COLORSDOCTOR .primary,
+    borderColor: DOCTOR_THEME.primary, // ✅ Corrigido
   },
 });
 
 export const HEADER_CONSTANTS = {
-  paddingTop: 50,           // Distância da câmera/status bar
-  paddingHorizontal: SIZES.containerPadding, // 20px
+  paddingTop: 50,
+  paddingHorizontal: SIZES.containerPadding,
   paddingBottom: SIZES.medium,
-  minHeight: 100,           // Altura mínima do header
+  minHeight: 100,
   titleFontSize: SIZES.large,
   titleFontWeight: '700' as const,
 };
 
-// Função para criar header padronizado
 export const createStandardHeader = () => ({
   paddingTop: HEADER_CONSTANTS.paddingTop,
   paddingHorizontal: HEADER_CONSTANTS.paddingHorizontal, 

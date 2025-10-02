@@ -24,10 +24,19 @@ export default function PatientLayout() {
         name="MyScheduling" // Agora visível na Tab Bar
         options={{
           title: 'Agenda',
+          href: null,
           headerShown: false,
-          tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} />,
         }}
       />
+      <Tabs.Screen
+              
+              name="searchDoctor" 
+              options={{
+                title: 'Pesquisar',
+                headerShown: false,
+                tabBarIcon: ({ color, size }) => <Ionicons name="search" size={size} color={color} />,
+              }}
+            />
       <Tabs.Screen
         name="profile" // Vai renderizar app/(patient)/profile.tsx
         options={{
@@ -50,6 +59,7 @@ export default function PatientLayout() {
                 headerShown: false,
               }}
             />
+            
     </Tabs>
   );
 }
