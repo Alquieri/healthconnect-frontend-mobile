@@ -21,7 +21,7 @@ export namespace AppointmentDto {
     id: string;
     doctorId: string;
     availabilityId: string;
-    appointmentDate: Date;
+    appointmentDate: string;
     duration: number;
     status: string;
     doctorName: string;
