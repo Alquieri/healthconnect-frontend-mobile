@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import { logout } from './auth';
 const TOKEN_KEY = "com.healthconnect.auth.token";
 
 export const saveToken = async (token: string): Promise<void> => {
@@ -21,10 +22,11 @@ export const getToken = async (): Promise<string | null> => {
             return token;
         } else {
             console.log('[SecureStore] ❌ Nenhum token encontrado');
-            return null; // ✅ Não chama logout aqui para evitar ciclo
+            logout();
+            return null;
         }
     } catch (error) {
-        console.error('[SecureStore] ❌ Erro ao buscar token:', error);
+        console.error('[SecureStore] ❌ Erro ao recuperar token:', error);
         return null;
     }
 };
@@ -36,5 +38,15 @@ export const deleteToken = async (): Promise<void> => {
         console.log('[SecureStore] ✅ Token deletado com sucesso');
     } catch (error) {
         console.error('[SecureStore] ❌ Erro ao deletar token:', error);
+    }
+};
+
+export const hasToken = async (): Promise<boolean> => {
+    try {
+        const token = await getToken();
+        return !!token;
+    } catch (error) {
+        console.error('[SecureStore] ❌ Erro ao verificar token:', error);
+        return false;
     }
 };
