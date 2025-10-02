@@ -9,7 +9,7 @@ interface SpecialtyCardProps {
     id: string;
     name: string;
     icon: keyof typeof MaterialCommunityIcons.glyphMap | 'custom';
-    customImage?: any; // ✅ Adicionar propriedade para imagem personalizada
+    customImage?: any;
   };
 }
 
@@ -35,7 +35,6 @@ export function SpecialtyCard({ item }: SpecialtyCardProps) {
         activeOpacity={0.8}
       >
         <View style={styles.iconCircle}>
-          {/* ✅ Renderizar imagem personalizada ou ícone padrão */}
           {item.customImage ? (
             <Image 
               source={item.customImage} 
@@ -83,11 +82,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  
   customIcon: {
-    width: 50,
-    height: 50,
-    tintColor: COLORS.white, 
+    width: 45,
+    height: 45,
+    tintColor: COLORS.white,
   },
   cardText: {
     fontSize: 12,
