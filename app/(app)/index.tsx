@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { StyleSheet, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { COLORS } from '../../src/constants/theme';
 import { HomeHeader } from '../../src/components/HomeHeader';
 import { SpecialtyGrid } from '../../src/components/SpecialtyGrid';
@@ -41,7 +42,7 @@ const initialNotifications: Notification[] = [
 ];
 
 export default function HomeScreen() {
-  const { session, isAuthenticated } = useAuth();
+  const { session, isAuthenticated, status } = useAuth(); // ✅ Adicionar status
   const [userName, setUserName] = useState('Visitante'); 
   const [loadingUserName, setLoadingUserName] = useState(false);
   
@@ -52,11 +53,14 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const loadUserName = async () => {
+      if (status === 'pending') {
+        console.log('[HomeScreen] Aguardando verificação de autenticação...');
+        return;
+      }
       if (!isAuthenticated || !session.userId) {
         setUserName('Visitante');
         return;
       }
-
       try {
         setLoadingUserName(true);
         
@@ -68,19 +72,17 @@ export default function HomeScreen() {
           const doctorData = await getDoctorByIdDetail(session.profileId!);
           const firstName = doctorData.name.split(' ')[0];
           setUserName(firstName);
-        }else {
+        } else {
           setUserName('Visitante');
         }
         
       } catch (error: any) {
         console.error('[HomeScreen] Erro ao carregar nome do usuário:', error);
         
-        // ✅ Se houver erro 401 ou similar, voltar ao padrão
         if (error.response?.status === 401) {
           console.log('[HomeScreen] Token inválido, usando nome padrão');
           setUserName('Visitante');
         } else {
-          // Em caso de outros erros, usar nome baseado no role ou padrão
           if (session.role === 'doctor') {
             setUserName('Doutor');
           } else if (session.role) {
@@ -95,7 +97,7 @@ export default function HomeScreen() {
     };
 
     loadUserName();
-  }, [isAuthenticated, session.userId, session.role]);
+  }, [isAuthenticated, session.userId, session.role, status]); // ✅ Adicionar status nas dependências
 
   // Verifica se existem notificações não lidas sempre que a lista muda
   useEffect(() => {

@@ -11,7 +11,6 @@ import { AppointmentDto } from "../../src/api/models/appointment";
 import { Stack } from "expo-router";
 import Toast from 'react-native-toast-message';
 
-// ✅ Interface para os agendamentos formatados
 interface FormattedAppointment {
   id: string;
   patientName: string;
@@ -31,9 +30,16 @@ export default function HomeDoctor() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // ✅ Função para formatar data/hora
-  const formatAppointmentDateTime = (appointmentDate: string) => {
-    const date = new Date(appointmentDate);
+  const formatAppointmentDateTime = (appointmentDate: string | Date) => {
+    const date = typeof appointmentDate === 'string' 
+      ? new Date(appointmentDate) 
+      : appointmentDate;
+    
+    if (isNaN(date.getTime())) {
+      console.warn('[DoctorHome] ⚠️ Data inválida recebida:', appointmentDate);
+      return { date: 'Data inválida', time: '--:--' };
+    }
+
     const dateStr = date.toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
@@ -46,7 +52,6 @@ export default function HomeDoctor() {
     return { date: dateStr, time: timeStr };
   };
 
-  // ✅ Função para traduzir status
   const translateStatus = (status: string): string => {
     const statusMap: Record<string, string> = {
       'scheduled': 'agendado',
@@ -59,7 +64,6 @@ export default function HomeDoctor() {
     return statusMap[status.toLowerCase()] || status;
   };
 
-  // ✅ Carregar dados do médico
   const loadDoctorData = async () => {
     if (!isAuthenticated || session.role !== "doctor" || !session.profileId) {
       setUserName("Doutor");
@@ -75,8 +79,6 @@ export default function HomeDoctor() {
       setUserName("Doutor");
     }
   };
-
-  // ✅ Carregar agendamentos do médico
   const loadAppointments = async () => {
     if (!isAuthenticated || session.role !== "doctor" || !session.profileId) {
       console.log('[DoctorHome] ⚠️ Usuário não autenticado ou não é médico');
@@ -89,6 +91,7 @@ export default function HomeDoctor() {
       
       const appointmentsData = await getAppointmentsByDoctorId(session.profileId);
       console.log('[DoctorHome] ✅ Agendamentos recebidos:', appointmentsData.length);
+      console.log('[DoctorHome] 📋 Dados brutos da API:', JSON.stringify(appointmentsData, null, 2));
 
       if (!appointmentsData || appointmentsData.length === 0) {
         console.log('[DoctorHome] ℹ️ Nenhum agendamento encontrado');
@@ -96,28 +99,42 @@ export default function HomeDoctor() {
         return;
       }
 
-      // ✅ Formatar dados para exibição
-      const formattedAppointments: FormattedAppointment[] = appointmentsData.map((appointment: AppointmentDto.AppointmentDetails) => {
-        const { date, time } = formatAppointmentDateTime(appointment.appointmentDate);
-        
-        return {
-          id: appointment.id,
-          patientName: appointment.clientName,
-          date: date,
-          time: time,
-          status: translateStatus(appointment.status),
-          duration: appointment.duration,
-          notes: appointment.notes || '',
-          clientId: appointment.clientId,
-          availabilityId: appointment.availabilityId
-        };
-      });
+      const formattedAppointments: FormattedAppointment[] = appointmentsData
+        .filter((appointment: AppointmentDto.AppointmentDetails) => {
+          return appointment && 
+                 appointment.id && 
+                 appointment.clientName && 
+                 appointment.appointmentDate;
+        })
+        .map((appointment: AppointmentDto.AppointmentDetails) => {
+          const { date, time } = formatAppointmentDateTime(appointment.appointmentDate);
+          
+          return {
+            id: appointment.id,
+            patientName: appointment.clientName || 'Nome não disponível',
+            date: date,
+            time: time,
+            status: translateStatus(appointment.status || 'scheduled'),
+            duration: appointment.duration || 30,
+            notes: appointment.notes || '',
+            clientId: appointment.clientId,
+            availabilityId: appointment.availabilityId
+          };
+        });
 
-      // ✅ Ordenar por data (mais próximos primeiro)
       const sortedAppointments = formattedAppointments.sort((a, b) => {
-        const dateA = new Date(`${a.date.split('/').reverse().join('-')} ${a.time}`);
-        const dateB = new Date(`${b.date.split('/').reverse().join('-')} ${b.time}`);
-        return dateA.getTime() - dateB.getTime();
+        try {
+          const [dayA, monthA, yearA] = a.date.split('/');
+          const [dayB, monthB, yearB] = b.date.split('/');
+          
+          const dateA = new Date(`${yearA}-${monthA}-${dayA} ${a.time}`);
+          const dateB = new Date(`${yearB}-${monthB}-${dayB} ${b.time}`);
+          
+          return dateA.getTime() - dateB.getTime();
+        } catch (error) {
+          console.warn('[DoctorHome] ⚠️ Erro ao ordenar appointments:', error);
+          return 0;
+        }
       });
 
       setAppointments(sortedAppointments);
@@ -133,6 +150,8 @@ export default function HomeDoctor() {
         setAppointments([]);
       } else if (error.response?.status === 403) {
         errorMessage = 'Você não tem permissão para ver estes agendamentos';
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Sessão expirada. Faça login novamente';
       }
       
       Toast.show({
