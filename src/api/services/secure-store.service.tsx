@@ -22,7 +22,6 @@ export const getToken = async (): Promise<string | null> => {
             return token;
         } else {
             console.log('[SecureStore] ❌ Nenhum token encontrado');
-            logout();
             return null;
         }
     } catch (error) {
