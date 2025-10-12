@@ -2,7 +2,6 @@ import { Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HeaderLogo } from '../../src/components/HeaderLogo';
 import { COLORS } from '../../src/constants/theme';
-import { HEADER_CONSTANTS } from '../../src/constants/layout';
 
 export default function AuthLayout() {
   const insets = useSafeAreaInsets();
@@ -44,9 +43,9 @@ export default function AuthLayout() {
       <Stack.Screen
         name="registerDoctor" 
         options={{
-          headerShown: true, // ✅ Permite header customizado
-          headerTransparent: false, // ✅ Header sólido
-          headerRight: () => null, // ✅ Sem logo no cadastro médico
+          headerShown: true,
+          headerTransparent: false,
+          headerRight: () => null,
           headerStyle: {
             backgroundColor: COLORS.white,
           },

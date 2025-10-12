@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Toast from 'react-native-toast-message';
 import { CustomButton } from '../../src/components/CustomButton';
+import { StandardHeader } from '../../src/components/Header';
 import { useAuth } from '../../src/context/AuthContext';
 import { createAvailabilityList, getAllAvailabilityByDoctorId } from '../../src/api/services/availability';
 import { getTheme, SIZES } from '../../src/constants/theme';
@@ -379,13 +380,12 @@ export default function CreateAvailabilityScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={24} color={COLORS.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Cadastrar Disponibilidade</Text>
-        <View style={styles.headerRight} />
-      </View>
+      {/* ✅ Header padronizado com Sidebar para médicos */}
+      <StandardHeader 
+        title="Cadastrar Disponibilidade"
+        showSidebar={true}
+        userType="doctor"
+      />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>

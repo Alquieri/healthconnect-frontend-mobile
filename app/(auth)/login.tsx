@@ -54,11 +54,10 @@ export default function LoginScreen() {
                                 autoCorrect={false}
                             />
                             
-                            {/* ✅ Input de senha com toggle de visualização */}
                             <CustomInput
                                 placeholder="Senha"
                                 secureTextEntry={true}
-                                showPasswordToggle={true} // ✅ Ativa o toggle de senha
+                                showPasswordToggle={true}
                                 value={password}
                                 onChangeText={setPassword}
                                 autoCapitalize="none"
@@ -95,7 +94,6 @@ export default function LoginScreen() {
                                 </Link>
                             </View>
                             
-                            {/* ✅ Link médico com cor verde específica */}
                             <View style={styles.doctorRedirect}>
                                 <Text style={styles.doctorRedirectText}>É médico? </Text>
                                 <Link href="/registerDoctor" asChild>
@@ -123,17 +121,17 @@ const styles = StyleSheet.create({
     scrollContainer: {
         flexGrow: 1,
         justifyContent: 'center',
-        paddingVertical: SIZES.large,
+        paddingVertical: SIZES.medium, // ✅ Reduzido de SIZES.large
         paddingHorizontal: SIZES.containerPadding,
     },
     content: {
         justifyContent: 'center',
         alignItems: 'center',
-        minHeight: SIZES.height * 0.8,
+        minHeight: SIZES.height * 0.7, // ✅ Reduzido de 0.8 para 0.7
     },
     headerContainer: {
         alignItems: 'center',
-        marginBottom: SIZES.xLarge,
+        marginBottom: SIZES.large, // ✅ Reduzido de SIZES.xLarge
         width: '100%',
     },
     title: {
@@ -150,7 +148,7 @@ const styles = StyleSheet.create({
     },
     formContainer: {
         alignItems: 'center',
-        marginBottom: SIZES.large,
+        marginBottom: SIZES.medium, // ✅ Reduzido de SIZES.large
         width: '100%',
     },
     forgotPasswordContainer: {
@@ -168,12 +166,12 @@ const styles = StyleSheet.create({
     orText: {
         color: COLORS.textSecondary,
         fontSize: SIZES.font,
-        marginVertical: SIZES.large,
+        marginVertical: SIZES.medium, // ✅ Reduzido de SIZES.large
         textAlign: 'center',
     },
     registerRedirectContainer: {
         alignItems: 'center',
-        paddingTop: SIZES.large,
+        paddingTop: SIZES.medium, // ✅ Reduzido de SIZES.large
         width: '100%',
     },
     registerRedirect: {
@@ -211,7 +209,7 @@ const styles = StyleSheet.create({
     },
     doctorRegisterLink: {
         fontSize: SIZES.font,
-        color: '#00A651', // ✅ Verde médico específico
+        color: '#00A651',
         fontWeight: 'bold',
     },
 });
