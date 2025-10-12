@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  
   ActivityIndicator,
   Alert,
   RefreshControl,
@@ -17,6 +16,7 @@ import Toast from 'react-native-toast-message';
 import { useAuth } from '../../src/context/AuthContext';
 import { COLORS, SIZES } from '../../src/constants/theme';
 import { HEADER_CONSTANTS } from '../../src/constants/layout';
+import { StandardHeader } from '../../src/components/Header';
 import { getAppointmentsByPatientId, updateAppointment } from '../../src/api/services/appointment';
 import { AppointmentDto } from '../../src/api/models/appointment';
 
@@ -48,7 +48,9 @@ const StatusBadge: React.FC<{
     isToday && styles.todayBadge
   ]}>
     {isToday && <Ionicons name="time" size={12} color={color} style={{ marginRight: 4 }} />}
-    <Text style={[styles.statusText, { color }]}>
+    <Text style={[styles.statusText, { color }]}
+      numberOfLines={1}
+    >
       {status}
     </Text>
   </View>
@@ -546,14 +548,6 @@ export default function MySchedulingScreen() {
       <SafeAreaView style={styles.container}>
         <Stack.Screen options={{ headerShown: false }} />
         
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={24} color={COLORS.text} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Meus Agendamentos</Text>
-          <View style={styles.headerRight} />
-        </View>
-        
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={styles.loadingText}>Carregando seus agendamentos...</Text>
@@ -566,16 +560,16 @@ export default function MySchedulingScreen() {
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={24} color={COLORS.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Meus Agendamentos</Text>
-        <TouchableOpacity onPress={() => loadAppointments(true)} style={styles.refreshButton}>
-          <Ionicons name="refresh" size={24} color={COLORS.primary} />
-        </TouchableOpacity>
-      </View>
+      {/* ✅ Header padronizado com Sidebar */}
+      <StandardHeader 
+        title="Meus Agendamentos"
+        showSidebar={true}
+        rightComponent={
+          <TouchableOpacity onPress={() => loadAppointments(true)} style={styles.refreshButton}>
+            <Ionicons name="refresh" size={24} color={COLORS.white} />
+          </TouchableOpacity>
+        }
+      />
 
       {/* Filtros */}
       {renderFilters()}
@@ -590,7 +584,8 @@ export default function MySchedulingScreen() {
             onReschedule={handleRescheduleAppointment}
             onViewDetails={handleViewDetails}
           />
-        )}
+        )
+        }
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
@@ -651,48 +646,20 @@ export default function MySchedulingScreen() {
   );
 }
 
-// --- ESTILOS REFORMADOS ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: HEADER_CONSTANTS.paddingHorizontal,
-    paddingTop: HEADER_CONSTANTS.paddingTop,
-    paddingBottom: HEADER_CONSTANTS.paddingBottom,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    minHeight: HEADER_CONSTANTS.minHeight,
-  },
-  backButton: {
-    padding: SIZES.tiny,
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: HEADER_CONSTANTS.titleFontSize,
-    fontWeight: HEADER_CONSTANTS.titleFontWeight,
-    color: COLORS.text,
-    textAlign: 'center',
-    marginHorizontal: SIZES.medium,
-  },
   refreshButton: {
-    padding: SIZES.tiny,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  headerRight: {
-    width: 32,
-  },
-  
+
   // Loading
   loadingContainer: {
     flex: 1,

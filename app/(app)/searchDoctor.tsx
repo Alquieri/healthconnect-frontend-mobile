@@ -6,7 +6,6 @@ import {
   TextInput,
   FlatList,
   TouchableOpacity,
-  
   Image,
   ActivityIndicator,
   Alert,
@@ -17,8 +16,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { getAllDoctors, getAllDoctorsBySpeciality } from '../../src/api/services/doctor';
 import { getAllSpecialities } from '../../src/api/services/speciality';
 import { COLORS, SIZES, createResponsiveStyle } from '../../src/constants/theme';
-import { HEADER_CONSTANTS } from '../../src/constants/layout';
 import { useAuth } from '../../src/context/AuthContext';
+import { StandardHeader } from '../../src/components/Header';
+import { HEADER_CONSTANTS } from '../../src/constants/layout';
 
 // --- INTERFACES E TIPOS ---
 interface Doctor {
@@ -476,18 +476,12 @@ export default function SearchDoctorScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* ✅ Header com padding ajustado para evitar conflito com câmera */}
-      <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => router.back()} 
-          style={styles.backButton}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Ionicons name="chevron-back" size={24} color={COLORS.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Encontre seu Médico</Text>
-        <View style={styles.headerRight} />
-      </View>
+      {/* ✅ Header padronizado com Sidebar */}
+      <StandardHeader 
+        title="Buscar Médicos"
+        showBackButton={false}
+        showSidebar={true}
+      />
 
       <FlatList
         data={filteredDoctors}
@@ -506,14 +500,12 @@ export default function SearchDoctorScreen() {
   );
 }
 
-// ✅ Estilos atualizados com posicionamento igual ao HomeHeader
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
   
-  // ✅ Header padronizado usando as constantes
   header: {
     flexDirection: 'row',
     alignItems: 'center',

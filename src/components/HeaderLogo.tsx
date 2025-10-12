@@ -1,6 +1,5 @@
 import React from 'react';
 import { Image, StyleSheet, View } from 'react-native';
-import { HEADER_CONSTANTS } from '../constants/layout';
 
 export function HeaderLogo() {
   return (
@@ -15,14 +14,14 @@ export function HeaderLogo() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingRight: HEADER_CONSTANTS.paddingHorizontal,
-    paddingTop: HEADER_CONSTANTS.paddingTop - 10, // ✅ Move 10px para cima
     alignItems: 'center',
     justifyContent: 'center',
+    paddingRight: 16, // Espaçamento da borda direita
+    marginRight: 4,   // Margem adicional para melhor posicionamento
   },
   logo: {
-    width: 120,
-    height: 100,
+    width: 80,  // Tamanho reduzido para caber melhor no header
+    height: 60, // Tamanho reduzido para caber melhor no header
     resizeMode: 'contain',
   },
 });

@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { COLORS } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { SearchBar } from './SearchBar';
+import { Sidebar } from './Sidebar';
 import { SIZES } from '../constants/theme';
 
 interface HomeHeaderProps {
@@ -30,7 +31,11 @@ export function HomeHeader({ userName, onNotificationsPress, hasUnreadNotificati
   return (
     <View style={styles.container}>
       <View style={styles.topRow}>
+        {/* Sidebar Component */}
+        <Sidebar />
+        
         <Text style={styles.greeting}>Olá, {userName}!</Text>
+        
         <TouchableOpacity 
           onPress={onNotificationsPress}
           style={styles.notificationButton}
@@ -66,9 +71,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   greeting: {
+    flex: 1,
     fontSize: 24,
     fontWeight: 'bold',
     color: COLORS.white,
+    marginLeft: SIZES.medium,
   },
   notificationButton: {
     position: 'relative',
@@ -87,15 +94,14 @@ const styles = StyleSheet.create({
 });
 
 export const HEADER_CONSTANTS = {
-  paddingTop: 50,           // Distância da câmera/status bar
-  paddingHorizontal: SIZES.containerPadding, // 20px
+  paddingTop: 50,
+  paddingHorizontal: SIZES.containerPadding,
   paddingBottom: SIZES.medium,
-  minHeight: 100,           // Altura mínima do header
+  minHeight: 100,
   titleFontSize: SIZES.large,
   titleFontWeight: '700' as const,
 };
 
-// Função para criar header padronizado
 export const createStandardHeader = () => ({
   paddingTop: HEADER_CONSTANTS.paddingTop,
   paddingHorizontal: HEADER_CONSTANTS.paddingHorizontal, 

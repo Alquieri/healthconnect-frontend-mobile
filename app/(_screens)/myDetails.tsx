@@ -1,27 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import Toast from 'react-native-toast-message';
 import { useAuth } from '../../src/context/AuthContext';
-import { COLORS, SIZES } from '../../src/constants/theme';
-import { HEADER_CONSTANTS } from '../../src/constants/layout';
 import { CustomInput } from '../../src/components/CustomInput';
 import { CustomButton } from '../../src/components/CustomButton';
-import { getClientProfileByUserId } from '../../src/api/services/patient';
-import { getDoctorByUserId } from '../../src/api/services/doctor';
+import { StandardHeader } from '../../src/components/Header';
+import { COLORS, SIZES } from '../../src/constants/theme';
+import { getClientProfileByUserId, updateClientProfile } from '../../src/api/services/patient';
+import { getDoctorByIdDetail, updateDoctorProfile } from '../../src/api/services/doctor';
+import Toast from 'react-native-toast-message';
 
 // --- INTERFACES ---
 interface UserProfile {
@@ -96,7 +86,7 @@ export default function MyDetailsScreen() {
       };
     } else if (session.role === 'doctor') {
       console.log(`Carregando perfil de médico para ID ${session.userId}`);
-      const doctorData = await getDoctorByUserId(session.userId);
+      const doctorData = await getDoctorByIdDetail(session.userId);
       console.log(`Carregando depois do get ${doctorData.name}`);
       if (!doctorData) {
         throw new Error('Dados do médico não encontrados');
@@ -331,26 +321,22 @@ export default function MyDetailsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen
-        options={{
-          headerShown: false, // ✅ Vamos usar header customizado
-        }}
-      />
+      <Stack.Screen options={{ headerShown: false }} />
 
-      {/* ✅ Header customizado padronizado */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={24} color={COLORS.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Meus Dados</Text>
-        <TouchableOpacity onPress={handleToggleEdit} style={styles.editButton}>
-          <Ionicons 
-            name={isEditing ? "close" : "create-outline"} 
-            size={24} 
-            color={COLORS.primary} 
-          />
-        </TouchableOpacity>
-      </View>
+      {/* ✅ Header padronizado com Sidebar */}
+      <StandardHeader 
+        title="Meus Dados"
+        showSidebar={true}
+        rightComponent={
+          <TouchableOpacity onPress={handleToggleEdit} style={styles.editButton}>
+            <Ionicons 
+              name={isEditing ? "close" : "create-outline"} 
+              size={24} 
+              color={COLORS.white} 
+            />
+          </TouchableOpacity>
+        }
+      />
 
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -530,38 +516,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  
-  // ✅ Header padronizado
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 44 : 16,
-    paddingBottom: 10,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    minHeight: 60,
-  },
-  backButton: {
-    padding: SIZES.tiny,
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: HEADER_CONSTANTS.titleFontSize,
-    fontWeight: HEADER_CONSTANTS.titleFontWeight,
-    color: COLORS.text,
-    textAlign: 'center',
-    marginHorizontal: SIZES.medium,
-  },
   editButton: {
-    padding: SIZES.small,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   
   // Loading & Error States

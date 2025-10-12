@@ -3,20 +3,24 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { COLORS, SIZES } from '../constants/theme';
-import { HEADER_CONSTANTS } from '../constants/layout';
+import { Sidebar } from './Sidebar';
 
 interface StandardHeaderProps {
   title: string;
   showBackButton?: boolean;
+  showSidebar?: boolean;
   rightComponent?: React.ReactNode;
   onBackPress?: () => void;
+  userType?: 'default' | 'doctor';
 }
 
 export function StandardHeader({ 
   title, 
-  showBackButton = true, 
+  showBackButton = true,
+  showSidebar = true,
   rightComponent,
-  onBackPress 
+  onBackPress,
+  userType = 'default'
 }: StandardHeaderProps) {
   const router = useRouter();
 
@@ -28,20 +32,29 @@ export function StandardHeader({
     }
   };
 
+  const headerColor = userType === 'doctor' ? '#00A651' : COLORS.primary;
+
   return (
-    <View style={styles.header}>
-      {showBackButton ? (
-        <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={24} color={COLORS.text} />
-        </TouchableOpacity>
-      ) : (
-        <View style={styles.headerSpacer} />
-      )}
-      
-      <Text style={styles.headerTitle}>{title}</Text>
-      
-      <View style={styles.rightContainer}>
-        {rightComponent || <View style={styles.headerSpacer} />}
+    <View style={[styles.header, { backgroundColor: headerColor }]}>
+      {/* Left Side - Sidebar ou Back Button */}
+      <View style={styles.leftSection}>
+        {showSidebar ? (
+          <Sidebar userType={userType} />
+        ) : showBackButton ? (
+          <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
+            <Ionicons name="chevron-back" size={24} color={COLORS.white} />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.placeholder} />
+        )}
+      </View>
+
+      {/* Title */}
+      <Text style={styles.title} numberOfLines={1}>{title}</Text>
+
+      {/* Right Side */}
+      <View style={styles.rightSection}>
+        {rightComponent || <View style={styles.placeholder} />}
       </View>
     </View>
   );
@@ -51,35 +64,44 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: HEADER_CONSTANTS.paddingHorizontal,
-    paddingTop: HEADER_CONSTANTS.paddingTop,
-    paddingBottom: HEADER_CONSTANTS.paddingBottom,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    elevation: 2,
+    justifyContent: 'space-between',
+    paddingHorizontal: SIZES.containerPadding,
+    paddingTop: 50,
+    paddingBottom: SIZES.medium,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    minHeight: HEADER_CONSTANTS.minHeight,
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
-  backButton: {
-    padding: SIZES.tiny,
+  leftSection: {
+    width: 44,
+    alignItems: 'flex-start',
   },
-  headerTitle: {
-    flex: 1,
-    fontSize: HEADER_CONSTANTS.titleFontSize,
-    fontWeight: HEADER_CONSTANTS.titleFontWeight,
-    color: COLORS.text,
-    textAlign: 'center',
-    marginHorizontal: SIZES.medium,
-  },
-  rightContainer: {
-    minWidth: 32,
+  rightSection: {
+    width: 44,
     alignItems: 'flex-end',
   },
-  headerSpacer: {
-    width: 32,
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title: {
+    flex: 1,
+    fontSize: SIZES.large,
+    fontWeight: '700',
+    color: COLORS.white,
+    textAlign: 'center',
+    marginHorizontal: SIZES.small,
+  },
+  placeholder: {
+    width: 44,
+    height: 44,
   },
 });

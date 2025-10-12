@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { DOCTOR_THEME, SIZES } from "../constants/theme"; // ✅ Corrigido
-import { Ionicons } from '@expo/vector-icons'; // ✅ Corrigido import
+import { DOCTOR_THEME, SIZES } from "../constants/theme";
+import { Ionicons } from '@expo/vector-icons';
 import { SearchBar } from './SearchBar';
+import { Sidebar } from './Sidebar';
 
 interface HomeHeaderProps {
   userName: string;
@@ -29,7 +30,11 @@ export function HeaderDoctor({ userName, onNotificationsPress, hasUnreadNotifica
   return (
     <View style={styles.container}>
       <View style={styles.topRow}>
-        <Text style={styles.greeting}>Olá, {userName}!</Text>
+        {/* Sidebar Component para médicos */}
+        <Sidebar userType="doctor" />
+        
+        <Text style={styles.greeting}>Olá, Dr. {userName}!</Text>
+        
         <TouchableOpacity 
           onPress={onNotificationsPress}
           style={styles.notificationButton}
@@ -52,7 +57,7 @@ export function HeaderDoctor({ userName, onNotificationsPress, hasUnreadNotifica
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: DOCTOR_THEME.primary, // ✅ Corrigido
+    backgroundColor: DOCTOR_THEME.primary,
     paddingTop: 50,
     paddingHorizontal: SIZES.containerPadding,
     paddingBottom: SIZES.medium,
@@ -66,9 +71,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   greeting: {
+    flex: 1,
     fontSize: 24,
     fontWeight: 'bold',
-    color: DOCTOR_THEME.white, // ✅ Corrigido
+    color: DOCTOR_THEME.white,
+    marginLeft: SIZES.medium,
   },
   notificationButton: {
     position: 'relative',
@@ -82,7 +89,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: '#ff3b30',
     borderWidth: 1.5,
-    borderColor: DOCTOR_THEME.primary, // ✅ Corrigido
+    borderColor: DOCTOR_THEME.primary,
   },
 });
 
