@@ -1,29 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   View, 
   Text, 
   TouchableOpacity, 
   StyleSheet, 
-  ScrollView, 
   Platform, 
   KeyboardAvoidingView,
-  ActivityIndicator 
+  ActivityIndicator,
+  ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Link, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Checkbox from 'expo-checkbox';
-import { Picker } from '@react-native-picker/picker';
 import Toast from 'react-native-toast-message'; 
-import { registerDoctor } from '../../src/api/services/user'; // ✅ Service correto
+import { registerDoctor } from '../../src/api/services/user';
 import { getAllSpecialities } from '../../src/api/services/speciality';
 import { CustomInput } from '../../src/components/CustomInput';
 import { CustomButton } from '../../src/components/CustomButton';
+import { CustomDropdown, DropdownItem } from '../../src/components/CustomDropdown';
 import { ResponsiveContainer } from '../../src/components/ResponsiveContainer';
 import { getTheme, SIZES, createResponsiveStyle } from '../../src/constants/theme';
 import { SpecialityDto } from '../../src/api/models/speciality';
-import { UserDto } from '../../src/api/models/user'; // ✅ Model correto
+import { UserDto } from '../../src/api/models/user'; 
 
 export default function RegisterDoctorScreen() {
   const router = useRouter();
@@ -44,20 +44,54 @@ export default function RegisterDoctorScreen() {
   // ✅ Estados profissionais
   const [rqe, setRqe] = useState('');
   const [crm, setCrm] = useState('');
-  const [crmState, setCrmState] = useState('');
-  const [selectedSpeciality, setSelectedSpeciality] = useState('');
+  const [crmState, setCrmState] = useState<string | null>(null);
+  const [selectedSpeciality, setSelectedSpeciality] = useState<string | null>(null);
   const [biography, setBiography] = useState('');
   
   // ✅ Estados para especialidades
   const [specialities, setSpecialities] = useState<SpecialityDto.SpecialityResponse[]>([]);
   const [specialitiesLoading, setSpecialitiesLoading] = useState(false);
 
+  // ✅ Tema do médico
+  const COLORS = getTheme('doctor');
+
+  // ✅ Opções de estados para o dropdown (memoized)
+  const stateOptions: DropdownItem[] = useMemo(() => [
+    { label: 'AC - Acre', value: 'AC' },
+    { label: 'AL - Alagoas', value: 'AL' },
+    { label: 'AP - Amapá', value: 'AP' },
+    { label: 'AM - Amazonas', value: 'AM' },
+    { label: 'BA - Bahia', value: 'BA' },
+    { label: 'CE - Ceará', value: 'CE' },
+    { label: 'DF - Distrito Federal', value: 'DF' },
+    { label: 'ES - Espírito Santo', value: 'ES' },
+    { label: 'GO - Goiás', value: 'GO' },
+    { label: 'MA - Maranhão', value: 'MA' },
+    { label: 'MT - Mato Grosso', value: 'MT' },
+    { label: 'MS - Mato Grosso do Sul', value: 'MS' },
+    { label: 'MG - Minas Gerais', value: 'MG' },
+    { label: 'PA - Pará', value: 'PA' },
+    { label: 'PB - Paraíba', value: 'PB' },
+    { label: 'PR - Paraná', value: 'PR' },
+    { label: 'PE - Pernambuco', value: 'PE' },
+    { label: 'PI - Piauí', value: 'PI' },
+    { label: 'RJ - Rio de Janeiro', value: 'RJ' },
+    { label: 'RN - Rio Grande do Norte', value: 'RN' },
+    { label: 'RS - Rio Grande do Sul', value: 'RS' },
+    { label: 'RO - Rondônia', value: 'RO' },
+    { label: 'RR - Roraima', value: 'RR' },
+    { label: 'SC - Santa Catarina', value: 'SC' },
+    { label: 'SP - São Paulo', value: 'SP' },
+    { label: 'SE - Sergipe', value: 'SE' },
+    { label: 'TO - Tocantins', value: 'TO' },
+  ], []);
+
   // ✅ Carregar especialidades ao montar o componente
   useEffect(() => {
     loadSpecialities();
   }, []);
 
-  const loadSpecialities = async () => {
+  const loadSpecialities = useCallback(async () => {
     try {
       setSpecialitiesLoading(true);
       const data = await getAllSpecialities();
@@ -73,43 +107,42 @@ export default function RegisterDoctorScreen() {
     } finally {
       setSpecialitiesLoading(false);
     }
-  };
+  }, []);
 
-  // ✅ Função de limpeza de campos numéricos
-  const cleanNumericField = (value: string, maxLength: number): string => {
-    // Remove TODOS os caracteres não numéricos
+  // ✅ Preparar opções de especialidades para o dropdown (memoized)
+  const specialityOptions: DropdownItem[] = useMemo(() => 
+    specialities.map(speciality => ({
+      label: speciality.name,
+      value: speciality.id
+    })), [specialities]
+  );
+
+  // ✅ Função de limpeza de campos numéricos (memoized)
+  const cleanNumericField = useCallback((value: string, maxLength: number): string => {
     const cleaned = value.replace(/[^\d]/g, '');
-    // Limita ao tamanho máximo
     const limited = cleaned.substring(0, maxLength);
-    // Remove qualquer espaço ou caractere especial residual
-    const final = limited.trim();
-    
-    console.log('[cleanNumericField] Input:', `"${value}"`, 'Output:', `"${final}"`, 'Length:', final.length, 'MaxLength:', maxLength);
-    
-    return final;
-  };
+    return limited.trim();
+  }, []);
 
-  // ✅ Formatadores com limite rígido
-  const formatRQE = (text: string) => {
+  // ✅ Formatadores com limite rígido (memoized)
+  const formatRQE = useCallback((text: string) => {
     const cleaned = cleanNumericField(text, 8);
-    console.log('[formatRQE] Resultado:', `"${cleaned}"`, 'Length:', cleaned.length);
     setRqe(cleaned);
-  };
+  }, [cleanNumericField]);
 
-  const formatCRM = (text: string) => {
+  const formatCRM = useCallback((text: string) => {
     const cleaned = cleanNumericField(text, 8);
-    console.log('[formatCRM] Resultado:', `"${cleaned}"`, 'Length:', cleaned.length);
     setCrm(cleaned);
-  };
+  }, [cleanNumericField]);
 
-  // ✅ Formatadores existentes
-  const formatCPF = (text: string) => {
+  // ✅ Formatadores existentes (memoized)
+  const formatCPF = useCallback((text: string) => {
     const cleaned = text.replace(/\D/g, '');
     const formatted = cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
     setCpf(formatted);
-  };
+  }, []);
 
-  const formatPhone = (text: string) => {
+  const formatPhone = useCallback((text: string) => {
     const cleaned = text.replace(/\D/g, '');
     let formatted = cleaned;
     
@@ -124,36 +157,21 @@ export default function RegisterDoctorScreen() {
     }
     
     setPhone(formatted);
-  };
+  }, []);
 
-  const toggleDatePicker = () => setShowDatePicker(!showDatePicker);
+  const toggleDatePicker = useCallback(() => setShowDatePicker(!showDatePicker), [showDatePicker]);
 
-  const onChangeDate = (event: any, selectedDate?: Date) => {
+  const onChangeDate = useCallback((event: any, selectedDate?: Date) => {
     setShowDatePicker(Platform.OS === 'ios'); 
     if (selectedDate) {
       setDate(selectedDate);
     }
-  };
+  }, []);
 
-  // ✅ Função de validação centralizada no componente
-  const validateForm = () => {
+  // ✅ Função de validação centralizada no componente (memoized)
+  const validateForm = useCallback(() => {
     // Validação de campos obrigatórios
-    if (!name || !email || !password || !cpf || !phone || !date || !sex || !rqe || !crm || !crmState || !selectedSpeciality) {
-      const missingFields = {
-        name: !!name,
-        email: !!email,
-        password: !!password,
-        cpf: !!cpf,
-        phone: !!phone,
-        date: !!date,
-        sex: !!sex,
-        rqe: !!rqe,
-        crm: !!crm,
-        crmState: !!crmState,
-        selectedSpeciality: !!selectedSpeciality
-      };
-      
-      console.log('[RegisterDoctor] ❌ Campos obrigatórios faltando:', missingFields);
+    if (!name?.trim() || !email?.trim() || !password || !cpf || !phone || !date || !sex || !rqe || !crm || !crmState || !selectedSpeciality) {
       Toast.show({ 
         type: 'error',
         text1: 'Campos Incompletos',
@@ -164,7 +182,7 @@ export default function RegisterDoctorScreen() {
 
     // Validação de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(email.trim())) {
       Toast.show({ 
         type: 'error',
         text1: 'Email Inválido',
@@ -268,10 +286,10 @@ export default function RegisterDoctorScreen() {
     }
 
     return true;
-  };
+  }, [name, email, password, confirmPassword, cpf, phone, date, sex, rqe, crm, crmState, selectedSpeciality, termsAccepted, specialities]);
 
-  // ✅ Função de registro usando UserDto.RegisterDoctor
-  const handleRegister = async () => {
+  // ✅ Função de registro usando UserDto.RegisterDoctor (memoized)
+  const handleRegister = useCallback(async () => {
     if (loading) return;
     
     setLoading(true);
@@ -291,7 +309,7 @@ export default function RegisterDoctorScreen() {
 
       // ✅ Payload usando UserDto.RegisterDoctor
       const payload: UserDto.RegisterDoctor = { 
-  // Dados pessoais
+        // Dados pessoais
         name: name.trim(),
         email: email.trim().toLowerCase(),
         phone: phoneCleaned,
@@ -302,8 +320,8 @@ export default function RegisterDoctorScreen() {
         // Dados profissionais
         rqe: cleanedRqe,
         crm: cleanedCrm,
-        crmState: crmState.trim(),
-        speciality: selectedSpecialityName, // ✅ MUDANÇA: specialty -> speciality
+        crmState: crmState!,
+        speciality: selectedSpecialityName,
         biography: biography.trim() || `Médico especialista em ${selectedSpecialityName}.`
       };
 
@@ -333,10 +351,7 @@ export default function RegisterDoctorScreen() {
     } finally {
       setLoading(false);
     }
-  };
-
-  // ✅ Tema do médico
-  const COLORS = getTheme('doctor');
+  }, [loading, validateForm, cpf, phone, rqe, crm, specialities, selectedSpeciality, name, email, password, sex, date, crmState, biography, router]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -357,6 +372,7 @@ export default function RegisterDoctorScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          {/* Header */}
           <ResponsiveContainer>
             <View style={styles.headerContainer}>
               <Text style={styles.title}>Cadastro Profissional</Text>
@@ -364,8 +380,10 @@ export default function RegisterDoctorScreen() {
                 Registre-se como médico e ofereça seus serviços especializados
               </Text>
             </View>
+          </ResponsiveContainer>
 
-            {/* Seção Dados Pessoais */}
+          {/* Dados Pessoais */}
+          <ResponsiveContainer>
             <View style={styles.sectionContainer}>
               <View style={styles.sectionHeader}>
                 <View style={styles.sectionIconContainer}>
@@ -373,91 +391,106 @@ export default function RegisterDoctorScreen() {
                 </View>
                 <Text style={styles.sectionTitle}>Dados Pessoais</Text>
               </View>
+            </View>
+          </ResponsiveContainer>
 
-              <CustomInput 
-                placeholder="Nome completo" 
-                value={name} 
-                onChangeText={setName}
-                autoCapitalize="words"
-                autoCorrect={false}
-              />
+          <ResponsiveContainer>
+            <CustomInput 
+              placeholder="Nome completo" 
+              value={name} 
+              onChangeText={setName}
+              autoCapitalize="words"
+              autoCorrect={false}
+            />
+          </ResponsiveContainer>
 
-              <CustomInput 
-                placeholder="E-mail profissional" 
-                value={email} 
-                onChangeText={setEmail} 
-                keyboardType="email-address" 
-                autoCapitalize="none" 
-                autoCorrect={false}
-              />
+          <ResponsiveContainer>
+            <CustomInput 
+              placeholder="E-mail profissional" 
+              value={email} 
+              onChangeText={setEmail} 
+              keyboardType="email-address" 
+              autoCapitalize="none" 
+              autoCorrect={false}
+            />
+          </ResponsiveContainer>
 
-              <CustomInput 
-                placeholder="Telefone profissional" 
-                value={phone} 
-                onChangeText={formatPhone} 
-                keyboardType="phone-pad"
-                maxLength={15}
-              />
+          <ResponsiveContainer>
+            <CustomInput 
+              placeholder="Telefone profissional" 
+              value={phone} 
+              onChangeText={formatPhone} 
+              keyboardType="phone-pad"
+              maxLength={15}
+            />
+          </ResponsiveContainer>
 
-              <CustomInput 
-                placeholder="CPF" 
-                value={cpf} 
-                onChangeText={formatCPF} 
-                keyboardType="numeric"
-                maxLength={14}
-              />
+          <ResponsiveContainer>
+            <CustomInput 
+              placeholder="CPF" 
+              value={cpf} 
+              onChangeText={formatCPF} 
+              keyboardType="numeric"
+              maxLength={14}
+            />
+          </ResponsiveContainer>
 
-              <CustomInput 
-                placeholder="Senha" 
-                value={password} 
-                onChangeText={setPassword} 
-                secureTextEntry={true}
-                showPasswordToggle={true}
-                autoCapitalize="none"
-              />
+          <ResponsiveContainer>
+            <CustomInput 
+              placeholder="Senha" 
+              value={password} 
+              onChangeText={setPassword} 
+              secureTextEntry={true}
+              showPasswordToggle={true}
+              autoCapitalize="none"
+            />
+          </ResponsiveContainer>
 
-              <CustomInput 
-                placeholder="Confirme sua senha" 
-                value={confirmPassword} 
-                onChangeText={setConfirmPassword} 
-                secureTextEntry={true}
-                showPasswordToggle={true}
-                autoCapitalize="none"
-              />
+          <ResponsiveContainer>
+            <CustomInput 
+              placeholder="Confirme sua senha" 
+              value={confirmPassword} 
+              onChangeText={setConfirmPassword} 
+              secureTextEntry={true}
+              showPasswordToggle={true}
+              autoCapitalize="none"
+            />
+          </ResponsiveContainer>
 
-              {/* Campo de sexo */}
-              <View style={styles.sexSelectorContainer}>
-                <Text style={styles.sectionLabel}>Sexo</Text>
-                <View style={styles.sexOptionsRow}>
-                  <TouchableOpacity
-                    style={[styles.sexOption, sex === 'Male' && styles.selectedSexOption]}
-                    onPress={() => setSex('Male')}
-                  >
-                    <Text style={[styles.sexOptionText, sex === 'Male' && styles.selectedSexOptionText]}>
-                      Masculino
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.sexOption, sex === 'Female' && styles.selectedSexOption]}
-                    onPress={() => setSex('Female')}
-                  >
-                    <Text style={[styles.sexOptionText, sex === 'Female' && styles.selectedSexOptionText]}>
-                      Feminino
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Campo de data */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Data de Nascimento</Text>
-                <TouchableOpacity style={styles.dateInput} onPress={toggleDatePicker}>
-                  <Text style={[styles.dateInputText, !date && styles.placeholderText]}>
-                    {date ? date.toLocaleDateString('pt-BR') : 'Selecione sua data de nascimento'}
+          {/* Sexo */}
+          <ResponsiveContainer>
+            <View style={styles.sexSelectorContainer}>
+              <Text style={styles.sectionLabel}>Sexo</Text>
+              <View style={styles.sexOptionsRow}>
+                <TouchableOpacity
+                  style={[styles.sexOption, sex === 'Male' && styles.selectedSexOption]}
+                  onPress={() => setSex('Male')}
+                >
+                  <Text style={[styles.sexOptionText, sex === 'Male' && styles.selectedSexOptionText]}>
+                    Masculino
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.sexOption, sex === 'Female' && styles.selectedSexOption]}
+                  onPress={() => setSex('Female')}
+                >
+                  <Text style={[styles.sexOptionText, sex === 'Female' && styles.selectedSexOptionText]}>
+                    Feminino
                   </Text>
                 </TouchableOpacity>
               </View>
+            </View>
+          </ResponsiveContainer>
 
+          {/* Data de Nascimento */}
+          <ResponsiveContainer>
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Data de Nascimento</Text>
+              <TouchableOpacity style={styles.dateInput} onPress={toggleDatePicker}>
+                <Text style={[styles.dateInputText, !date && styles.placeholderText]}>
+                  {date ? date.toLocaleDateString('pt-BR') : 'Selecione sua data de nascimento'}
+                </Text>
+              </TouchableOpacity>
               {showDatePicker && (
                 <DateTimePicker 
                   mode="date" 
@@ -468,8 +501,10 @@ export default function RegisterDoctorScreen() {
                 />
               )}
             </View>
+          </ResponsiveContainer>
 
-            {/* Seção Dados Profissionais */}
+          {/* Dados Profissionais */}
+          <ResponsiveContainer>
             <View style={styles.sectionContainer}>
               <View style={styles.sectionHeader}>
                 <View style={styles.sectionIconContainer}>
@@ -477,121 +512,84 @@ export default function RegisterDoctorScreen() {
                 </View>
                 <Text style={styles.sectionTitle}>Dados Profissionais</Text>
               </View>
-
-              <CustomInput 
-                placeholder="RQE (máx. 8 dígitos) - Registro de Qualificação de Especialista" 
-                value={rqe} 
-                onChangeText={formatRQE} 
-                keyboardType="number-pad"
-                maxLength={8}
-                autoCorrect={false}
-                autoCapitalize="none"
-              />
-
-              <CustomInput 
-                placeholder="CRM (máx. 8 dígitos) - Conselho Regional de Medicina" 
-                value={crm} 
-                onChangeText={formatCRM} 
-                keyboardType="number-pad"
-                maxLength={8}
-                autoCorrect={false}
-                autoCapitalize="none"
-              />
-
-              {/* Campo Estado do CRM */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Estado do CRM *</Text>
-                <View style={styles.pickerContainer}>
-                  <Picker
-                    selectedValue={crmState}
-                    onValueChange={(itemValue) => {
-                      console.log('[RegisterDoctor] Estado CRM selecionado:', itemValue);
-                      setCrmState(itemValue);
-                    }}
-                    style={styles.picker}
-                  >
-                    <Picker.Item 
-                      label="Selecione o estado do seu CRM" 
-                      value="" 
-                      color={COLORS.placeholder}
-                    />
-                    <Picker.Item label="AC - Acre" value="AC" color={COLORS.text} />
-                    <Picker.Item label="AL - Alagoas" value="AL" color={COLORS.text} />
-                    <Picker.Item label="AP - Amapá" value="AP" color={COLORS.text} />
-                    <Picker.Item label="AM - Amazonas" value="AM" color={COLORS.text} />
-                    <Picker.Item label="BA - Bahia" value="BA" color={COLORS.text} />
-                    <Picker.Item label="CE - Ceará" value="CE" color={COLORS.text} />
-                    <Picker.Item label="DF - Distrito Federal" value="DF" color={COLORS.text} />
-                    <Picker.Item label="ES - Espírito Santo" value="ES" color={COLORS.text} />
-                    <Picker.Item label="GO - Goiás" value="GO" color={COLORS.text} />
-                    <Picker.Item label="MA - Maranhão" value="MA" color={COLORS.text} />
-                    <Picker.Item label="MT - Mato Grosso" value="MT" color={COLORS.text} />
-                    <Picker.Item label="MS - Mato Grosso do Sul" value="MS" color={COLORS.text} />
-                    <Picker.Item label="MG - Minas Gerais" value="MG" color={COLORS.text} />
-                    <Picker.Item label="PA - Pará" value="PA" color={COLORS.text} />
-                    <Picker.Item label="PB - Paraíba" value="PB" color={COLORS.text} />
-                    <Picker.Item label="PR - Paraná" value="PR" color={COLORS.text} />
-                    <Picker.Item label="PE - Pernambuco" value="PE" color={COLORS.text} />
-                    <Picker.Item label="PI - Piauí" value="PI" color={COLORS.text} />
-                    <Picker.Item label="RJ - Rio de Janeiro" value="RJ" color={COLORS.text} />
-                    <Picker.Item label="RN - Rio Grande do Norte" value="RN" color={COLORS.text} />
-                    <Picker.Item label="RS - Rio Grande do Sul" value="RS" color={COLORS.text} />
-                    <Picker.Item label="RO - Rondônia" value="RO" color={COLORS.text} />
-                    <Picker.Item label="RR - Roraima" value="RR" color={COLORS.text} />
-                    <Picker.Item label="SC - Santa Catarina" value="SC" color={COLORS.text} />
-                    <Picker.Item label="SP - São Paulo" value="SP" color={COLORS.text} />
-                    <Picker.Item label="SE - Sergipe" value="SE" color={COLORS.text} />
-                    <Picker.Item label="TO - Tocantins" value="TO" color={COLORS.text} />
-                  </Picker>
-                </View>
-              </View>
-
-              {/* Campo de Especialidade */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Especialidade Médica *</Text>
-                {specialitiesLoading ? (
-                  <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="small" color={COLORS.primary} />
-                    <Text style={styles.loadingText}>Carregando especialidades...</Text>
-                  </View>
-                ) : (
-                  <View style={styles.pickerContainer}>
-                    <Picker
-                      selectedValue={selectedSpeciality}
-                      onValueChange={(itemValue) => {
-                        console.log('[RegisterDoctor] Especialidade selecionada:', itemValue);
-                        setSelectedSpeciality(itemValue);
-                      }}
-                      style={styles.picker}
-                    >
-                      <Picker.Item 
-                        label="Selecione sua especialidade" 
-                        value="" 
-                        color={COLORS.placeholder}
-                      />
-                      {specialities.map((speciality) => (
-                        <Picker.Item
-                          key={speciality.id}
-                          label={speciality.name}
-                          value={speciality.id}
-                          color={COLORS.text}
-                        />
-                      ))}
-                    </Picker>
-                  </View>
-                )}
-              </View>
-
-              <CustomInput 
-                placeholder="Biografia profissional (opcional)" 
-                value={biography} 
-                onChangeText={setBiography} 
-                multiline
-                numberOfLines={4}
-                style={{ textAlignVertical: 'top', height: 100 }}
-              />
             </View>
+          </ResponsiveContainer>
 
+          <ResponsiveContainer>
+            <CustomInput 
+              placeholder="RQE (máx. 8 dígitos) - Registro de Qualificação de Especialista" 
+              value={rqe} 
+              onChangeText={formatRQE} 
+              keyboardType="number-pad"
+              maxLength={8}
+              autoCorrect={false}
+              autoCapitalize="none"
+            />
+          </ResponsiveContainer>
+
+          <ResponsiveContainer>
+            <CustomInput 
+              placeholder="CRM (máx. 8 dígitos) - Conselho Regional de Medicina" 
+              value={crm} 
+              onChangeText={formatCRM} 
+              keyboardType="number-pad"
+              maxLength={8}
+              autoCorrect={false}
+              autoCapitalize="none"
+            />
+          </ResponsiveContainer>
+
+          {/* Estado do CRM */}
+          <ResponsiveContainer>
+            <CustomDropdown
+              label="Estado do CRM"
+              placeholder="Selecione o estado do seu CRM"
+              items={stateOptions}
+              value={crmState}
+              onSelect={setCrmState}
+              required
+              userType="doctor"
+              searchable
+              maxHeight={200}
+            />
+          </ResponsiveContainer>
+
+          {/* Especialidade */}
+          <ResponsiveContainer>
+            {specialitiesLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color={COLORS.primary} />
+                <Text style={styles.loadingText}>Carregando especialidades...</Text>
+              </View>
+            ) : (
+              <CustomDropdown
+                label="Especialidade Médica"
+                placeholder="Selecione sua especialidade"
+                items={specialityOptions}
+                value={selectedSpeciality}
+                onSelect={setSelectedSpeciality}
+                required
+                userType="doctor"
+                searchable
+                maxHeight={250}
+              />
+            )}
+          </ResponsiveContainer>
+
+          {/* Biografia */}
+          <ResponsiveContainer>
+            <CustomInput 
+              placeholder="Biografia profissional (opcional)" 
+              value={biography} 
+              onChangeText={setBiography} 
+              multiline
+              numberOfLines={4}
+              style={{ textAlignVertical: 'top', height: 100 }}
+            />
+          </ResponsiveContainer>
+
+          {/* Termos */}
+          <ResponsiveContainer>
             <View style={styles.checkboxContainer}>
               <Checkbox
                 style={styles.checkbox}
@@ -603,14 +601,20 @@ export default function RegisterDoctorScreen() {
                 Eu li e autorizo a coleta e o uso dos meus dados conforme a Política de Privacidade.
               </Text>
             </View>
+          </ResponsiveContainer>
 
+          {/* Botão Cadastrar */}
+          <ResponsiveContainer>
             <CustomButton
               title={loading ? 'Cadastrando...' : 'Cadastrar como Médico'}
               onPress={handleRegister}
               disabled={loading}
               userType="doctor"
             />
+          </ResponsiveContainer>
 
+          {/* Link para Login */}
+          <ResponsiveContainer>
             <View style={styles.loginRedirectContainer}>
               <View style={styles.loginRedirect}>
                 <Text style={styles.loginRedirectText}>Já possui conta? </Text>
@@ -660,7 +664,7 @@ const styles = StyleSheet.create({
 
   // Seções
   sectionContainer: {
-    marginBottom: SIZES.xLarge,
+    marginBottom: SIZES.medium,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -707,6 +711,7 @@ const styles = StyleSheet.create({
   sexSelectorContainer: {
     width: SIZES.inputWidth,
     marginBottom: SIZES.medium,
+    alignSelf: 'center',
   },
   sexOptionsRow: {
     flexDirection: 'row',
@@ -754,20 +759,6 @@ const styles = StyleSheet.create({
     color: '#999999',
   },
 
-  // Picker
-  pickerContainer: {
-    backgroundColor: '#ffffff',
-    borderRadius: SIZES.radius,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    width: SIZES.inputWidth,
-    overflow: 'hidden',
-  },
-  picker: {
-    height: 50,
-    color: '#333333',
-  },
-
   // Loading
   loadingContainer: {
     flexDirection: 'row',
@@ -779,6 +770,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e0e0e0',
     width: SIZES.inputWidth,
+    alignSelf: 'center',
   },
   loadingText: {
     marginLeft: SIZES.small,
@@ -792,6 +784,7 @@ const styles = StyleSheet.create({
     width: SIZES.inputWidth,
     marginVertical: SIZES.large,
     alignItems: 'flex-start',
+    alignSelf: 'center',
   },
   checkbox: {
     marginRight: SIZES.small,
