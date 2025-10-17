@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
 
 export function VideoCard() {
-  const videoId = '_pkY2mv3gJ4';
+  const videoId = 'lzbuI_dA_lU';
   const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
   const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
 
