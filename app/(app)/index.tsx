@@ -5,12 +5,13 @@ import { COLORS } from '../../src/constants/theme';
 import { HomeHeader } from '../../src/components/HomeHeader';
 import { SpecialtyGrid } from '../../src/components/SpecialtyGrid';
 import { VideoCard } from '../../src/components/VideoCard';
+import { SecondOpinionCard } from '../../src/components/SecondOpinionCard';
 import { FeaturedDoctorsList } from '../../src/components/FeaturedDoctorsList';
 import { NotificationsPopup, Notification } from '../../src/components/NotificationsPopup';
 import { useAuth } from '../../src/context/AuthContext';
 import { getClientProfileByUserId } from '../../src/api/services/patient';
 import { getDoctorByIdDetail } from '../../src/api/services/doctor';
-import "../../src/components/SpecialtyGrid"
+
 const initialNotifications: Notification[] = [
   { 
     id: '1', 
@@ -42,28 +43,20 @@ const initialNotifications: Notification[] = [
 ];
 
 export default function HomeScreen() {
-  const { session, isAuthenticated, status } = useAuth(); // ✅ Adicionar status
+  const { session, isAuthenticated } = useAuth();
   const [userName, setUserName] = useState('Visitante'); 
   const [loadingUserName, setLoadingUserName] = useState(false);
   
   const [isNotificationsVisible, setIsNotificationsVisible] = useState(false);
-  
   const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
-  const [hasUnread, setHasUnread] = useState(false);
 
   useEffect(() => {
     const loadUserName = async () => {
-      if (status === 'pending') {
-        console.log('[HomeScreen] Aguardando verificação de autenticação...');
-        return;
-      }
       if (!isAuthenticated || !session.userId) {
         setUserName('Visitante');
         return;
       }
       try {
-        setLoadingUserName(true);
-        
         if (session.role === 'patient') {
           const patientData = await getClientProfileByUserId(session.userId);
           const firstName = patientData.name.split(' ')[0];
@@ -91,13 +84,11 @@ export default function HomeScreen() {
             setUserName('Visitante');
           }
         }
-      } finally {
-        setLoadingUserName(false);
       }
     };
 
     loadUserName();
-  }, [isAuthenticated, session.userId, session.role, status]); // ✅ Adicionar status nas dependências
+  }, [isAuthenticated, session.userId, session.role]);
 
   // Verifica se existem notificações não lidas sempre que a lista muda
   useEffect(() => {
@@ -119,13 +110,15 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <HomeHeader 
-        userName={userName} // ✅ Mostra "Visitante" se não logado, nome real se logado
-        onNotificationsPress={handleNotificationsPress}
-        hasUnreadNotifications={hasUnread}
+        userName={userName}
+        onNotificationsPress={() => setIsNotificationsVisible(true)}
+        hasUnreadNotifications={notifications.some(n => !n.read)}
       />
-      <ScrollView>
+      
+      <ScrollView showsVerticalScrollIndicator={false}>
         <SpecialtyGrid />
         <VideoCard />
+        <SecondOpinionCard />
         <FeaturedDoctorsList />
       </ScrollView>
       
